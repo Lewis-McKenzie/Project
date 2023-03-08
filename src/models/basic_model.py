@@ -14,12 +14,14 @@ class BasicModel(tf.keras.Model):
                 # Use masking to handle the variable sequence lengths
                 mask_zero=True),
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
-            tf.keras.layers.Dense(64, activation='relu'),
-            tf.keras.layers.Dense(1)
+            tf.keras.layers.Dense(512, input_shape=(6000,), activation='relu'),
+            tf.keras.layers.Dense(256, activation='relu'),
+            tf.keras.layers.Dense(128, activation='relu'),
+            tf.keras.layers.Dense(12, activation='softmax'),
         ])
 
     def call(self, inputs, training=None, mask=None):
         return self.pipeline(inputs)
 
     def adapt_encoder(self, vocab: List[str]) -> None:
-        pass
+        self.pipeline.layers[0].adapt(vocab)

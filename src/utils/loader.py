@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as et
 import pandas as pd
+from typing import Dict, Union, List
 
 DIR = "F:\\Documents\\Uni\\PRBX\\Project\\data\\ABSA16_Restaurants_Train_SB1_v2.xml"
 
@@ -15,16 +16,20 @@ class Loader:
         d = []
         for review in xml.iter("Review"):
             for sentence in review.iter("sentence"):
-                entry = {}
+                entry: Dict[str, Union[str, List[Dict[str, str]]]] = {}
                 entry["review_id"] = sentence.attrib["id"].split(":")[0]
-                entry["text"] = sentence.find("text").text
-                opinions = []
+                text_elem = sentence.find("text")
+                if text_elem is None or text_elem.text is None:
+                    id = sentence.attrib["id"]
+                    raise Exception(f"Text not found for review {id}")
+                entry["text"] = text_elem.text
+
                 for opinion in sentence.iter("Opinion"):
-                    opinions.append({"target": opinion.attrib["target"],
-                                    "category": opinion.attrib["category"],
-                                    "polarity": opinion.attrib["polarity"],
-                                    "from": opinion.attrib["from"],
-                                    "to": opinion.attrib["to"]})
-                entry["opinions"] = opinions
-                d.append(entry)
+                    entry = entry.copy()
+                    entry["target"] = opinion.attrib["target"]
+                    entry["category"] = opinion.attrib["category"]
+                    entry["polarity"] = opinion.attrib["polarity"]
+                    entry["from"] = opinion.attrib["from"]
+                    entry["to"] = opinion.attrib["to"]
+                    d.append(entry)
         return d
