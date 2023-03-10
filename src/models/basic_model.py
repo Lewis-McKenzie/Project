@@ -17,7 +17,7 @@ class BasicModel(tf.keras.Model):
             tf.keras.layers.Dense(512, input_shape=(6000,), activation='relu'),
             tf.keras.layers.Dense(256, activation='relu'),
             tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dense(12, activation='softmax'),
+            tf.keras.layers.Dense(12, activation='relu'),
         ])
 
     def call(self, inputs, training=None, mask=None):

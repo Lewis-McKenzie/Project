@@ -23,13 +23,13 @@ class Loader:
                     id = sentence.attrib["id"]
                     raise Exception(f"Text not found for review {id}")
                 entry["text"] = text_elem.text
-
+                opinions = []
                 for opinion in sentence.iter("Opinion"):
-                    entry = entry.copy()
-                    entry["target"] = opinion.attrib["target"]
-                    entry["category"] = opinion.attrib["category"]
-                    entry["polarity"] = opinion.attrib["polarity"]
-                    entry["from"] = opinion.attrib["from"]
-                    entry["to"] = opinion.attrib["to"]
-                    d.append(entry)
+                    opinions.append({"target": opinion.attrib["target"],
+                                    "category": opinion.attrib["category"],
+                                    "polarity": opinion.attrib["polarity"],
+                                    "from": opinion.attrib["from"],
+                                    "to": opinion.attrib["to"]})
+                entry["opinions"] = opinions
+                d.append(entry)
         return d
