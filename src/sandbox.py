@@ -6,16 +6,18 @@ from utils import Loader, Preprocessor, DIR
 from models import BasicModel
 
 df = Loader.load(DIR)
-x, y = Preprocessor.process_all(df)
+x, (y_aspect, y_category) = Preprocessor.process_all(df)
+
+y = y_category
 
 model = BasicModel()
-
 model.adapt_encoder(df["text"])
-model.compile(loss='categorical_crossentropy', optimizer='Adam', metrics=['accuracy'])
+
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_accuracy'])
 
 model.fit(df["text"], y, epochs=10, verbose=1)
 
-INDEX = 0
+INDEX = 3
 
 txt: str = df["text"][INDEX]
 aspects = [opinion["target"] for opinion in df["opinions"][INDEX]]
@@ -23,6 +25,10 @@ categories = [opinion["category"] for opinion in df["opinions"][INDEX]]
 print(txt)
 print(aspects)
 print(categories)
-print(model.predict(np.array([txt.lower()])))
+out = model.predict(np.array([df["text"][INDEX]]))
+print(out)
 print(y[INDEX])
+
+print(model.invert_multi_hot(*out))
+print(model.invert_multi_hot(y[INDEX]))
 

@@ -22,7 +22,7 @@ class Loader:
                 if text_elem is None or text_elem.text is None:
                     id = sentence.attrib["id"]
                     raise Exception(f"Text not found for review {id}")
-                entry["text"] = text_elem.text
+                entry["text"] = text_elem.text.lower()
                 opinions = []
                 for opinion in sentence.iter("Opinion"):
                     opinions.append({"target": opinion.attrib["target"],

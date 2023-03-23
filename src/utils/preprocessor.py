@@ -1,29 +1,38 @@
 from typing import List, Dict, Set, Tuple
 import pandas as pd
+import numpy as np
 import tensorflow as tf
+import gensim
+from gensim.models import Word2Vec
 from sklearn.preprocessing import LabelEncoder
 
 import nltk
+from nltk.corpus import stopwords
 nltk.download('stopwords', quiet=True)
 nltk.download('punkt', quiet=True)
 
 MAX_LEN = 96
+VECTOR_SIZE = 64
 
 class Preprocessor:
-    label_encoder: LabelEncoder
+    category_encoder: tf.keras.layers.StringLookup
     categories: Set[str]
+    word2vec: Word2Vec
 
     @staticmethod
-    def process_all(data: pd.DataFrame) -> Tuple[List[str], tf.Tensor]:
+    def process_all(data: pd.DataFrame) -> Tuple[tf.Tensor, Tuple[tf.Tensor, tf.Tensor]]:
         Preprocessor.initialize_categories(data["opinions"])
-        Preprocessor.initialize_label_encoder()
-        text: List[str] = []
-        opinion: List[List[float]] = []
+        Preprocessor.initialize_category_encoder()
+        Preprocessor.initialize_word2vec(data["text"])
+        text: List[List[List[float]]] = []
+        aspects: List[List[float]] = []
+        categories: List[List[float]] = []
         for _, entry in data.iterrows():
-            x, y = Preprocessor.process(entry["text"], entry["opinions"])
-            text.append(x)
-            opinion.append(y)
-        return text, tf.convert_to_tensor(opinion)
+            x, (aspect, category) = Preprocessor.process(entry["text"], entry["opinions"])
+            text.append(Preprocessor.pad(x, MAX_LEN, VECTOR_SIZE))
+            aspects.append(aspect)
+            categories.append(category)
+        return tf.convert_to_tensor(text), (tf.convert_to_tensor(aspects), tf.convert_to_tensor(categories))
 
     @staticmethod
     def initialize_categories(opinions: List[List[Dict[str, str]]]) -> None:
@@ -33,88 +42,64 @@ class Preprocessor:
                 Preprocessor.categories.add(entry["category"])
 
     @staticmethod
-    def initialize_label_encoder() -> None:
-        Preprocessor.label_encoder = LabelEncoder().fit(list(Preprocessor.categories))
+    def initialize_category_encoder() -> None:
+        terms = tf.ragged.constant(list(Preprocessor.categories))
+        Preprocessor.category_encoder = tf.keras.layers.StringLookup(output_mode="multi_hot")
+        Preprocessor.category_encoder.adapt(terms)
 
     @staticmethod
-    def process(x: str, y: List[Dict[str, str]]) -> Tuple[str, List[float]]:
-        embedded_aspect = Preprocessor.embed_aspects(x, y)
-        embedded_category = Preprocessor.embed_categories(y)
-        embedded_opinions = Preprocessor.embed_opinions(x, y)
-        return x.lower(), embedded_category
+    def initialize_word2vec(sentences: List[str]) -> None:
+        tokenized_sentences = [Preprocessor.tokenize(sentence) for sentence in sentences]
+        Preprocessor.word2vec = Word2Vec(tokenized_sentences, min_count=1, vector_size=VECTOR_SIZE)
+        Preprocessor.word2vec.train(tokenized_sentences, total_examples=len(tokenized_sentences), epochs=1)
 
     @staticmethod
-    def embed_opinions(text: str, opinions: List[Dict[str, str]]) -> List[List[float]]:
-        embedding = [[0.0 for _ in range(MAX_LEN)] for _ in Preprocessor.categories]
-        sentence = nltk.word_tokenize(text.lower())
-        for opinion in opinions:
-            aspect = nltk.word_tokenize(opinion["target"].lower())
-            category_index = Preprocessor.label_encoder.transform([opinion["category"]])[0]
-            print(Preprocessor.label_encoder.transform([opinion["category"]]))
-            polarity = opinion["polarity"]
-            if polarity == "positive":
-                aspect_start_value = 2.5
-                aspect_continued_value = 1.5
-            elif polarity == "negative":
-                aspect_start_value = -2.5
-                aspect_continued_value = -1.5
-            else:
-                aspect_start_value = 0.5
-                aspect_continued_value = -0.5
-            count = 0
-            for i, word in enumerate(sentence):
-                if word == aspect[0] and count == 0:
-                    embedding[category_index][i] = aspect_start_value
-                    count += 1
-                elif count > 0 and count < len(aspect):
-                    embedding[category_index][i] = aspect_continued_value
-                    count += 1
-        return embedding
-
-
-    @staticmethod
-    def embed_categories(opinions: List[Dict[str, str]]) -> List[float]:
-        encoded_opinions = []
-        for opinion in opinions:
-            encoded_label = Preprocessor.label_encoder.transform([opinion["category"]])
-            categorised_label = tf.keras.utils.to_categorical(encoded_label, num_classes=len(Preprocessor.categories))[0]
-            encoded_opinions.append(categorised_label)
-        return Preprocessor.merge_encodings(encoded_opinions)
-
-    @staticmethod
-    def merge_encodings(encodings: List[List[float]]) -> List[float]:
-        if encodings == []:
-            return [0.0 for _ in Preprocessor.categories]
-        return [max([encoding[i] for encoding in encodings]) for i, _ in enumerate(Preprocessor.categories)]
-
-    @staticmethod
-    def embed_aspects(text: str, opinions: List[Dict[str, str]]) -> List[float]:
-        sentence = nltk.word_tokenize(text.lower())
-        embedded_aspect = [0.0 for _ in sentence]
-        for opinion in opinions:
-            aspect = nltk.word_tokenize(opinion["target"].lower())
-            count = 0
-            for i, word in enumerate(sentence):
-                if word == aspect[0]:
-                    embedded_aspect[i] = 2.0
-                    count += 1
-                elif count > 0 and count < len(aspect):
-                    embedded_aspect[i] = 1.0
-                    count += 1
-        return Preprocessor.pad_aspect(embedded_aspect)
-
-    @staticmethod
-    def pad_aspect(embedded_aspect: List[float]) -> List[float]:
-        return [embedded_aspect[i] if i < len(embedded_aspect) else 0.0 for i in range(MAX_LEN)]
+    def process(x: str, y: List[Dict[str, str]]) -> Tuple[List[List[float]], Tuple[List[float], List[float]]]:
+        words = Preprocessor.remove_stopwords(Preprocessor.tokenize(x))
+        return Preprocessor.embed_words(words), Preprocessor.embed_opinions(words, y)
 
     @staticmethod
     def tokenize(text: str) -> List[str]:
-        return []
+        return nltk.word_tokenize(text)
 
     @staticmethod
-    def embed_words(words: List[str]) -> List[float]:
-        return []
+    def remove_stopwords(words: List[str]) -> List[str]:
+        return [token for token in words if not token in stopwords.words("english")]
 
     @staticmethod
-    def one_hot(embedded_words: List[int]) -> List[List[int]]:
-        return []
+    def embed_words(words: List[str]) -> List[List[float]]:
+        return [Preprocessor.word2vec.wv[word] for word in words]
+
+    @staticmethod
+    def embed_opinions(words: List[str], opinions: List[Dict[str, str]]) -> Tuple[List[float], List[float]]:
+        aspect_embedding = [0.0 for _ in range(MAX_LEN)]
+        category_embedding = Preprocessor.category_encoder([opinion["category"] for opinion in opinions])
+        for opinion in opinions:
+            Preprocessor.embed_aspect(opinion, words, aspect_embedding)
+        return aspect_embedding, category_embedding
+
+    @staticmethod
+    def embed_aspect(opinion: Dict[str, str], words: List[str], embedding: List[float]) -> None:
+        aspect = nltk.word_tokenize(opinion["target"].lower())
+        aspect_start_value, aspect_continued_value = Preprocessor.get_polarity_val(opinion["polarity"])            
+        count = 0
+        for i, word in enumerate(words):
+            if word == aspect[0] and count == 0:
+                embedding[i] = aspect_start_value
+                count += 1
+            elif count > 0 and count < len(aspect):
+                embedding[i] = aspect_continued_value
+                count += 1
+
+    @staticmethod
+    def get_polarity_val(polarity: str) -> Tuple[float, float]:
+        if polarity == "positive":
+            return 2.0, 1.0
+        elif polarity == "negative":
+            return -2.0, -1.0
+        else:
+            return 0.5, -0.5
+
+    @staticmethod
+    def pad(l: List[List[float]], n: int, m: int) -> List[List[float]]:
+        return [[0.0 for _ in range(m)] if i >= len(l) else l[i] for i in range(n)]
