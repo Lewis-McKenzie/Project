@@ -3,14 +3,16 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from utils import Loader, Preprocessor, DIR
-from models import BasicModel
+from models import BasicModel, PolarityCategoryModel
 
 df = Loader.load(DIR)
-x, (y_aspect, y_category) = Preprocessor.process_all(df)
+x, [y_aspect, y_category, y_polarity_category] = Preprocessor.process_all(df)
 
-y = y_category
+#y = y_category
+y = y_polarity_category
 
-model = BasicModel()
+#model = BasicModel()
+model = PolarityCategoryModel()
 model.adapt_encoder(df["text"])
 
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_accuracy'])
@@ -31,4 +33,3 @@ print(y[INDEX])
 
 print(model.invert_multi_hot(*out))
 print(model.invert_multi_hot(y[INDEX]))
-

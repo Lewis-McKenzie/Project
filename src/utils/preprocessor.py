@@ -16,23 +16,27 @@ VECTOR_SIZE = 64
 
 class Preprocessor:
     category_encoder: tf.keras.layers.StringLookup
+    polarity_category_encoder: tf.keras.layers.StringLookup
     categories: Set[str]
+    polarity_categories: List[str]
     word2vec: Word2Vec
 
     @staticmethod
-    def process_all(data: pd.DataFrame) -> Tuple[tf.Tensor, Tuple[tf.Tensor, tf.Tensor]]:
+    def process_all(data: pd.DataFrame) -> Tuple[tf.Tensor, List[tf.Tensor]]:
         Preprocessor.initialize_categories(data["opinions"])
-        Preprocessor.initialize_category_encoder()
+        Preprocessor.initialize_encoders()
         Preprocessor.initialize_word2vec(data["text"])
         text: List[List[List[float]]] = []
         aspects: List[List[float]] = []
-        categories: List[List[float]] = []
+        categories: List[List[float]] = []        
+        polarity_categories: List[List[float]] = []
         for _, entry in data.iterrows():
-            x, (aspect, category) = Preprocessor.process(entry["text"], entry["opinions"])
+            x, [aspect, category, polarity_category] = Preprocessor.process(entry["text"], entry["opinions"])
             text.append(Preprocessor.pad(x, MAX_LEN, VECTOR_SIZE))
             aspects.append(aspect)
             categories.append(category)
-        return tf.convert_to_tensor(text), (tf.convert_to_tensor(aspects), tf.convert_to_tensor(categories))
+            polarity_categories.append(polarity_category)
+        return tf.convert_to_tensor(text), [tf.convert_to_tensor(target) for target in [aspects, categories, polarity_categories]]
 
     @staticmethod
     def initialize_categories(opinions: List[List[Dict[str, str]]]) -> None:
@@ -40,12 +44,16 @@ class Preprocessor:
         for opinion in opinions:
             for entry in opinion:
                 Preprocessor.categories.add(entry["category"])
+        Preprocessor.polarity_categories = [f"{polarity} {category}" for polarity in ["positive", "negative", "neutral"] for category in Preprocessor.categories]
 
     @staticmethod
-    def initialize_category_encoder() -> None:
-        terms = tf.ragged.constant(list(Preprocessor.categories))
+    def initialize_encoders() -> None:
+        categories = tf.ragged.constant(list(Preprocessor.categories))
         Preprocessor.category_encoder = tf.keras.layers.StringLookup(output_mode="multi_hot")
-        Preprocessor.category_encoder.adapt(terms)
+        Preprocessor.category_encoder.adapt(categories)
+        polarity_categories = tf.ragged.constant(Preprocessor.polarity_categories)
+        Preprocessor.polarity_category_encoder = tf.keras.layers.StringLookup(output_mode="multi_hot")
+        Preprocessor.polarity_category_encoder.adapt(polarity_categories)
 
     @staticmethod
     def initialize_word2vec(sentences: List[str]) -> None:
@@ -54,9 +62,9 @@ class Preprocessor:
         Preprocessor.word2vec.train(tokenized_sentences, total_examples=len(tokenized_sentences), epochs=1)
 
     @staticmethod
-    def process(x: str, y: List[Dict[str, str]]) -> Tuple[List[List[float]], Tuple[List[float], List[float]]]:
+    def process(x: str, y: List[Dict[str, str]]) -> Tuple[List[List[float]], List[List[float]]]:
         words = Preprocessor.remove_stopwords(Preprocessor.tokenize(x))
-        return Preprocessor.embed_words(words), Preprocessor.embed_opinions(words, y)
+        return Preprocessor.embed_words(words), [Preprocessor.get_aspect_embedding(words, y), Preprocessor.get_category_embedding(y), Preprocessor.get_polarity_category_embeddding(y)]
 
     @staticmethod
     def tokenize(text: str) -> List[str]:
@@ -71,12 +79,19 @@ class Preprocessor:
         return [Preprocessor.word2vec.wv[word] for word in words]
 
     @staticmethod
-    def embed_opinions(words: List[str], opinions: List[Dict[str, str]]) -> Tuple[List[float], List[float]]:
+    def get_category_embedding(opinions: List[Dict[str, str]]) -> List[float]:
+        return Preprocessor.category_encoder([opinion["category"] for opinion in opinions])
+
+    @staticmethod
+    def get_polarity_category_embeddding(opinions: List[Dict[str, str]]) -> List[float]:
+        return Preprocessor.polarity_category_encoder(["{} {}".format(opinion["polarity"], opinion["category"]) for opinion in opinions])
+
+    @staticmethod
+    def get_aspect_embedding(words: List[str], opinions: List[Dict[str, str]]) -> List[float]:
         aspect_embedding = [0.0 for _ in range(MAX_LEN)]
-        category_embedding = Preprocessor.category_encoder([opinion["category"] for opinion in opinions])
         for opinion in opinions:
             Preprocessor.embed_aspect(opinion, words, aspect_embedding)
-        return aspect_embedding, category_embedding
+        return aspect_embedding
 
     @staticmethod
     def embed_aspect(opinion: Dict[str, str], words: List[str], embedding: List[float]) -> None:
