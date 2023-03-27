@@ -1,14 +1,13 @@
 from typing import List
 import tensorflow as tf
-from utils import Preprocessor
 import numpy as np
 
 VOCAB_SIZE = 1024
 
 class BasicModel(tf.keras.Model):
-    def __init__(self):
+    def __init__(self, encoder: tf.keras.layers.StringLookup):
         super(BasicModel, self).__init__()
-        self.encoder = Preprocessor.category_encoder
+        self.encoder = encoder
         self.pipeline = tf.keras.Sequential([
             tf.keras.layers.TextVectorization(
                 max_tokens=VOCAB_SIZE,
@@ -22,7 +21,7 @@ class BasicModel(tf.keras.Model):
             tf.keras.layers.Dense(512, input_shape=(6000,), activation='relu'),
             tf.keras.layers.Dense(256, activation='relu'),
             tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dense(self.encoder.vocab_size(), activation='sigmoid'),
+            tf.keras.layers.Dense(self.encoder.vocabulary_size(), activation='sigmoid'),
         ])
 
 

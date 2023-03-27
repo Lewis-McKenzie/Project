@@ -3,7 +3,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from utils import Loader, Preprocessor, DIR
-from models import BasicModel, PolarityCategoryModel
+from models import BasicModel
 from argumentation import Argument
 
 df = Loader.load(DIR)
@@ -13,12 +13,12 @@ x, [y_aspect, y_category, y_polarity_category] = Preprocessor.process_all(df)
 y = y_polarity_category
 
 #model = BasicModel()
-model = PolarityCategoryModel()
+model = BasicModel(Preprocessor.polarity_category_encoder)
 model.adapt_encoder(df["text"])
 
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_accuracy'])
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.fit(df["text"], y, epochs=10, verbose=1)
+model.fit(df["text"], y, epochs=20, verbose=1)
 
 INDEX = 3
 
@@ -31,10 +31,13 @@ print(categories)
 out = model.predict(df["text"])
 print(out[INDEX])
 print(y[INDEX])
+ALPHA = 0.5
 
-print(model.invert_multi_hot(out[INDEX], 0.7))
-print(model.invert_multi_hot(y[INDEX], 0.7))
+print(model.invert_multi_hot(out[INDEX], ALPHA))
+print(model.invert_multi_hot(y[INDEX], ALPHA))
 
-argument = Argument(model, df["text"].to_list(), out)
-attackers = argument.attack(txt, 0.7)
-print(attackers)
+argument = Argument(model, df["text"].to_list(), out, ALPHA)
+attackers = argument.attack(txt)
+for i, c in enumerate(model.invert_all(out, ALPHA)):
+    #print(c, model.invert_multi_hot(y[i], ALPHA))
+    pass
