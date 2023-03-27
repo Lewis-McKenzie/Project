@@ -32,6 +32,9 @@ class BasicModel(tf.keras.Model):
     def adapt_encoder(self, vocab: List[str]) -> None:
         self.pipeline.layers[0].adapt(vocab)
 
-    def invert_multi_hot(self, encoded_labels):
-        hot_indices = np.argwhere(encoded_labels > 0.7)[..., 0]
+    def invert_all(self, encoded_labels, alpha: float) -> List[List[str]]:
+        return [self.invert_multi_hot(encoding, alpha) for encoding in encoded_labels]
+
+    def invert_multi_hot(self, encoded_labels, alpha: float) -> List[str]:
+        hot_indices = np.argwhere(encoded_labels >= alpha)[..., 0]
         return np.take(self.encoder.get_vocabulary(), hot_indices)

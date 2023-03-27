@@ -4,6 +4,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from utils import Loader, Preprocessor, DIR
 from models import BasicModel, PolarityCategoryModel
+from argumentation import Argument
 
 df = Loader.load(DIR)
 x, [y_aspect, y_category, y_polarity_category] = Preprocessor.process_all(df)
@@ -27,9 +28,13 @@ categories = [opinion["category"] for opinion in df["opinions"][INDEX]]
 print(txt)
 print(aspects)
 print(categories)
-out = model.predict(np.array([df["text"][INDEX]]))
-print(out)
+out = model.predict(df["text"])
+print(out[INDEX])
 print(y[INDEX])
 
-print(model.invert_multi_hot(*out))
-print(model.invert_multi_hot(y[INDEX]))
+print(model.invert_multi_hot(out[INDEX], 0.7))
+print(model.invert_multi_hot(y[INDEX], 0.7))
+
+argument = Argument(model, df["text"].to_list(), out)
+attackers = argument.attack(txt, 0.7)
+print(attackers)
