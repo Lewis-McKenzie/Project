@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from sklearn.model_selection import train_test_split
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from utils import Loader, Preprocessor, DIR
@@ -7,18 +8,16 @@ from models import BasicModel
 from argumentation import Argument
 
 df = Loader.load(DIR)
-x, [y_aspect, y_category, y_polarity_category] = Preprocessor.process_all(df)
-
-#y = y_category
-y = y_polarity_category
+processor = Preprocessor(df)
 
 #model = BasicModel()
-model = BasicModel(Preprocessor.polarity_category_encoder)
+model = BasicModel(processor.polarity_category_encoder)
 model.adapt_encoder(df["text"])
-
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.fit(df["text"], y, epochs=20, verbose=1)
+train_dataset, validation_dataset = processor.make_polarity_category_dataset(64)
+
+model.fit(train_dataset, validation_data=validation_dataset, epochs=20, verbose=1)
 
 INDEX = 3
 
