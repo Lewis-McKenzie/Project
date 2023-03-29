@@ -6,6 +6,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from utils import Loader, Preprocessor, DIR
 from models import BasicModel
 from argumentation import Argument
+import tensorflow as tf
 
 df = Loader.load(DIR)
 processor = Preprocessor(df)
@@ -20,23 +21,23 @@ train_dataset, validation_dataset = processor.make_polarity_category_dataset(64)
 model.fit(train_dataset, validation_data=validation_dataset, epochs=20, verbose=1)
 
 INDEX = 3
-
-txt: str = df["text"][INDEX]
-aspects = [opinion["target"] for opinion in df["opinions"][INDEX]]
-categories = [opinion["category"] for opinion in df["opinions"][INDEX]]
-print(txt)
-print(aspects)
-print(categories)
-out = model.predict(df["text"])
-print(out[INDEX])
-print(y[INDEX])
 ALPHA = 0.5
 
-print(model.invert_multi_hot(out[INDEX], ALPHA))
-print(model.invert_multi_hot(y[INDEX], ALPHA))
+text_batch, label_batch = next(iter(train_dataset))
+x = text_batch[0]
+y = label_batch[0]
 
-argument = Argument(model, df["text"].to_list(), out, ALPHA)
-attackers = argument.attack(txt)
-for i, c in enumerate(model.invert_all(out, ALPHA)):
+print(x)
+print(y)
+out = model.predict(text_batch)[0]
+
+print(model.invert_multi_hot(out, ALPHA))
+print(model.invert_multi_hot(y, ALPHA))
+
+predict = model.predict(tf.convert_to_tensor(df["text"]))
+
+argument = Argument(model, df["text"].to_list(), predict, ALPHA)
+attackers = argument.attack(x)
+for i, c in enumerate(model.invert_all(predict, ALPHA)):
     #print(c, model.invert_multi_hot(y[i], ALPHA))
     pass
