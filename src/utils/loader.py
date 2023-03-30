@@ -1,8 +1,10 @@
 import xml.etree.ElementTree as et
 import pandas as pd
+import numpy as np
 from typing import Dict, Union, List
 
 DIR = "F:\\Documents\\Uni\\PRBX\\Project\\data\\ABSA16_Restaurants_Train_SB1_v2.xml"
+EMB_PATH = "F:\\Documents\\Uni\\PRBX\\Project\\data\\word_embeddings\\glove.6B\\glove.6B.100d.txt"
 
 class Loader:
     @staticmethod
@@ -33,3 +35,13 @@ class Loader:
                 entry["opinions"] = opinions
                 d.append(entry)
         return d
+
+    @staticmethod
+    def load_word_embedings(filepath: str):
+        embeddings_index = {}
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f.readlines():
+                word, coefs = line.split(maxsplit=1)
+                coefs = np.fromstring(coefs, "f", sep=" ")
+                embeddings_index[word] = coefs
+        return embeddings_index

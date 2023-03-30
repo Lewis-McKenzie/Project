@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
+import nltk
 
 MAX_LEN = 96
 VECTOR_SIZE = 64
@@ -14,6 +15,13 @@ class Preprocessor:
         self.polarity_categories = self.init_polarity_categories(self.categories)
         self.category_encoder = self.init_encoder(self.categories)
         self.polarity_category_encoder = self.init_encoder(self.polarity_categories)
+
+    def get_vocab(self) -> List[str]:
+        vocab = set()
+        for x in self.data["text"]:
+            for t in nltk.tokenize.word_tokenize(x):
+                vocab.add(t)
+        return list(vocab)
 
     def init_categories(self, opinions: List[List[Dict[str, str]]]) -> List[str]:
         categories = set()

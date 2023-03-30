@@ -5,17 +5,18 @@ import numpy as np
 VOCAB_SIZE = 1024
 
 class BasicModel(tf.keras.Model):
-    def __init__(self, encoder: tf.keras.layers.StringLookup):
+    def __init__(self, encoder: tf.keras.layers.StringLookup, embedding_matrix: np.ndarray):
+        print(embedding_matrix.shape[0])
         super(BasicModel, self).__init__()
         self.encoder = encoder
         self.pipeline = tf.keras.Sequential([
             tf.keras.layers.TextVectorization(
-                max_tokens=VOCAB_SIZE,
+                max_tokens=embedding_matrix.shape[0],
             ),
             tf.keras.layers.Embedding(
-                input_dim=VOCAB_SIZE,
-                output_dim=128,
-                # Use masking to handle the variable sequence lengths
+                input_dim=embedding_matrix.shape[0],
+                output_dim=embedding_matrix.shape[1],
+                embeddings_initializer=tf.keras.initializers.Constant(embedding_matrix),
                 mask_zero=True),           
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
             tf.keras.layers.Dense(512, input_shape=(6000,), activation='relu'),
@@ -30,6 +31,9 @@ class BasicModel(tf.keras.Model):
 
     def adapt_encoder(self, vocab: List[str]) -> None:
         self.pipeline.layers[0].adapt(vocab)
+
+    def get_vocab(self) -> List[str]:
+        return self.pipeline.layers[0].get_vocabulary()
 
     def invert_all(self, encoded_labels, alpha: float) -> List[List[str]]:
         return [self.invert_multi_hot(encoding, alpha) for encoding in encoded_labels]
