@@ -18,7 +18,7 @@ model = BasicModel(processor.polarity_category_encoder, embedding_matrix)
 model.adapt_encoder(df["text"])
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.fit(train_dataset, validation_data=validation_dataset, epochs=20, verbose=1)
+model.fit(train_dataset, validation_data=validation_dataset, epochs=30, verbose=1)
 
 ALPHA = 0.5
 

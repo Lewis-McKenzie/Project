@@ -17,9 +17,12 @@ class BasicModel(tf.keras.Model):
                 output_dim=embedding_matrix.shape[1],
                 embeddings_initializer=tf.keras.initializers.Constant(embedding_matrix),
                 mask_zero=True),           
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True)),
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
             tf.keras.layers.Dense(512, input_shape=(6000,), activation='relu'),
+            tf.keras.layers.Dropout(0.5),
             tf.keras.layers.Dense(256, activation='relu'),
+            tf.keras.layers.Dropout(0.5),
             tf.keras.layers.Dense(128, activation='relu'),
             tf.keras.layers.Dense(self.encoder.vocabulary_size(), activation='sigmoid'),
         ])

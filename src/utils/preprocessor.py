@@ -65,7 +65,6 @@ class Preprocessor:
     def split_polarity_category(self, test_size: float):
         labels = tf.ragged.constant(self.polarity_category_values(self.data))
         label_binarized = self.polarity_category_encoder(labels).numpy()
-        x = label_binarized[:, 1]
         train_df, test_df = train_test_split(self.data, test_size=test_size, stratify=label_binarized[:, 1])
         x_train, x_test = train_df["text"], test_df["text"]
         y_train, y_test = self.polarity_category_values(train_df), self.polarity_category_values(test_df)
