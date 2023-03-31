@@ -6,7 +6,6 @@ VOCAB_SIZE = 1024
 
 class BasicModel(tf.keras.Model):
     def __init__(self, encoder: tf.keras.layers.StringLookup, embedding_matrix: np.ndarray):
-        print(embedding_matrix.shape[0])
         super(BasicModel, self).__init__()
         self.encoder = encoder
         self.pipeline = tf.keras.Sequential([

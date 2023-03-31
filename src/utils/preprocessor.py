@@ -63,11 +63,27 @@ class Preprocessor:
         return dataset.batch(batch_size)
 
     def split_polarity_category(self, test_size: float):
-        #TODO: stratisfy
-        train_df, test_df = train_test_split(self.data, test_size=test_size)
+        labels = tf.ragged.constant(self.polarity_category_values(self.data))
+        label_binarized = self.polarity_category_encoder(labels).numpy()
+        x = label_binarized[:, 1]
+        train_df, test_df = train_test_split(self.data, test_size=test_size, stratify=label_binarized[:, 1])
         x_train, x_test = train_df["text"], test_df["text"]
         y_train, y_test = self.polarity_category_values(train_df), self.polarity_category_values(test_df)
         return x_train, y_train, x_test, y_test
 
     def polarity_category_values(self, df: pd.DataFrame) -> List[List[str]]:
         return [["{} {}".format(opinion["polarity"], opinion["category"]) for opinion in opinions] for opinions in df["opinions"]]
+
+    def make_embedding_matrix(self, embeddings_index: Dict[str, List[float]]) -> np.ndarray:
+        voc = self.get_vocab()
+        num_tokens = len(voc) + 2
+        embedding_dim = len(list(embeddings_index.values())[0])
+        word_index = dict(zip(voc, range(len(voc))))
+        embedding_matrix = np.zeros((num_tokens, embedding_dim))
+        for word, i in word_index.items():
+            embedding_vector = embeddings_index.get(word)
+            if embedding_vector is not None:
+                # Words not found in embedding index will be all-zeros.
+                # This includes the representation for "padding" and "OOV"
+                embedding_matrix[i] = embedding_vector
+        return embedding_matrix
