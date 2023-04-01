@@ -88,6 +88,7 @@ class Argument:
         return self.is_preffered_extension(arguments)
     
 
+    #TODO: algorithm only works on digraphs
     def fuzzy_labeling(self, iters: int) -> List[List[float]]:
         fuzzy_labels = self.init_fuzz_labels()
         new_labels = fuzzy_labels.copy()
