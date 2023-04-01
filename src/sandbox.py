@@ -18,6 +18,7 @@ model = BasicModel(processor.polarity_category_encoder, embedding_matrix)
 model.adapt_encoder(df["text"])
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+
 model.fit(train_dataset, validation_data=validation_dataset, epochs=30, verbose=1)
 
 ALPHA = 0.5
@@ -35,8 +36,10 @@ print(model.invert_multi_hot(y, ALPHA))
 
 predict = model.predict(tf.convert_to_tensor(df["text"]))
 
-argument = Argument(model, df["text"].to_list(), predict, ALPHA)
-attackers = argument.attack(x)
-for i, c in enumerate(model.invert_all(predict, ALPHA)):
-    #print(c, model.invert_multi_hot(y[i], ALPHA))
-    pass
+CUT = 10
+
+argument = Argument(model, df["text"].to_list()[:CUT], predict[:CUT], ALPHA)
+#argument = Argument(model, df["text"].to_list()[:CUT], processor.get_encoded_labels()[:CUT], ALPHA)
+fl = argument.fuzzy_labeling(120000)
+
+

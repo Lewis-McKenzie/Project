@@ -27,7 +27,6 @@ class BasicModel(tf.keras.Model):
             tf.keras.layers.Dense(self.encoder.vocabulary_size(), activation='sigmoid'),
         ])
 
-
     def call(self, inputs, training=None, mask=None):
         return self.pipeline(inputs)
 

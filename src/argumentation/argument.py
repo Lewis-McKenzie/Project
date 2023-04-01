@@ -1,4 +1,5 @@
 from typing import List, Set
+import numpy as np
 
 from models import BasicModel
 
@@ -7,9 +8,11 @@ class Argument:
         self.model = model
         self.data = data
         self.labels = labels
+        self.alpha = alpha
         self.category_labels = self.model.invert_all(self.labels, alpha)
     
     def change_alpha(self, alpha: float) -> None:
+        self.alpha = alpha
         self.category_labels = self.model.invert_all(self.labels, alpha)
 
     def attack(self, argument: str) -> List[str]:
@@ -83,6 +86,59 @@ class Argument:
             if categories_attacked.intersection(categories) == set():
                 return False
         return self.is_preffered_extension(arguments)
+    
+
+    def fuzzy_labeling(self, iters: int) -> List[List[float]]:
+        fuzzy_labels = self.init_fuzz_labels()
+        for _ in range(iters):
+            for i, _ in enumerate(self.data):
+                fuzzy_labels = self.acceptability_step(i, fuzzy_labels)
+        return fuzzy_labels
+
+    def init_fuzz_labels(self) -> List[List[float]]:
+        labels = []
+        for label in self.labels:
+            l = [i if i >= self.alpha else 0.0 for i in label]
+            labels.append(l)
+        return labels
+
+    def acceptability_step(self, target_index: int, fuzzy_labels: List[List[float]]) -> List[List[float]]:
+        hot_indices: List[int] = np.argwhere(self.labels[target_index] >= self.alpha)[..., 0]
+        # remove neutrals
+        hot_indices = [i for i in hot_indices if i != 0 and (i < 13 or i > 24)]
+        for hot_index in hot_indices:
+            fuzzy_label = fuzzy_labels[target_index][hot_index]
+            actual_label = self.labels[target_index][hot_index]
+            max_attack = self.max_attack(target_index, hot_index, fuzzy_labels)
+            fuzzy_labels[target_index][hot_index] = min(actual_label, (fuzzy_label + 1 - max_attack)/2)
+        return fuzzy_labels
+            
+    def max_attack(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
+        opposite_index = self.opposite_index(category_index)
+        max_attack = 0.0
+        for i, label in enumerate(fuzzy_labels):
+            if i == target_index:
+                continue
+            max_attack = max(max_attack, label[opposite_index])
+        return max_attack
+
+    def opposite_index(self, index: int) -> int:
+        if index == 0:
+            return index
+        elif index < 13:
+            return 24 + index
+        elif index > 24:
+            return index - 24
+        else:
+            return index
+
+    def describe(self, fl: List[List[float]]) -> None:
+        labels = self.init_fuzz_labels()
+        for i, l in enumerate(fl):
+            for hot in np.argwhere(self.labels[i] >= self.alpha)[..., 0]:
+                cat = np.take(self.model.encoder.get_vocabulary(), hot)
+                print(f"{cat}: {labels[i][hot]} -> {l[hot]}")
+            print()
 
     def support(self, text: str) -> List[str]:
         return []
