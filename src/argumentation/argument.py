@@ -90,9 +90,12 @@ class Argument:
 
     def fuzzy_labeling(self, iters: int) -> List[List[float]]:
         fuzzy_labels = self.init_fuzz_labels()
+        new_labels = fuzzy_labels.copy()
         for _ in range(iters):
             for i, _ in enumerate(self.data):
-                fuzzy_labels = self.acceptability_step(i, fuzzy_labels)
+                new_labels[i] = self.acceptability_step(i, fuzzy_labels)
+            fuzzy_labels = new_labels.copy()
+            self.describe(fuzzy_labels)
         return fuzzy_labels
 
     def init_fuzz_labels(self) -> List[List[float]]:
@@ -102,16 +105,17 @@ class Argument:
             labels.append(l)
         return labels
 
-    def acceptability_step(self, target_index: int, fuzzy_labels: List[List[float]]) -> List[List[float]]:
+    def acceptability_step(self, target_index: int, fuzzy_labels: List[List[float]]) -> List[float]:
         hot_indices: List[int] = np.argwhere(self.labels[target_index] >= self.alpha)[..., 0]
         # remove neutrals
         hot_indices = [i for i in hot_indices if i != 0 and (i < 13 or i > 24)]
+        fuzzy_label = fuzzy_labels[target_index].copy()
         for hot_index in hot_indices:
-            fuzzy_label = fuzzy_labels[target_index][hot_index]
-            actual_label = self.labels[target_index][hot_index]
+            fuzzy_label_val = fuzzy_labels[target_index][hot_index]
+            actual_label_val = self.labels[target_index][hot_index]
             max_attack = self.max_attack(target_index, hot_index, fuzzy_labels)
-            fuzzy_labels[target_index][hot_index] = min(actual_label, (fuzzy_label + 1 - max_attack)/2)
-        return fuzzy_labels
+            fuzzy_label[hot_index] = min(actual_label_val, (fuzzy_label_val + 1 - max_attack)/2)
+        return fuzzy_label
             
     def max_attack(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
         opposite_index = self.opposite_index(category_index)
@@ -139,6 +143,7 @@ class Argument:
                 cat = np.take(self.model.encoder.get_vocabulary(), hot)
                 print(f"{cat}: {labels[i][hot]} -> {l[hot]}")
             print()
+        print("-------------------")
 
     def support(self, text: str) -> List[str]:
         return []
