@@ -60,7 +60,7 @@ class Preprocessor:
             (x, label_binarized)
         )
         dataset = dataset.shuffle(batch_size * 10) if is_train else dataset
-        return dataset.batch(batch_size)
+        return dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
     def split_polarity_category(self, test_size: float):
         label_binarized = self.get_encoded_labels()

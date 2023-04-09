@@ -96,7 +96,7 @@ class Argument:
             for i, _ in enumerate(self.data):
                 new_labels[i] = self.acceptability_step(i, fuzzy_labels)
             fuzzy_labels = new_labels.copy()
-            self.describe(fuzzy_labels)
+            #self.describe(fuzzy_labels)
         return fuzzy_labels
 
     def init_fuzz_labels(self) -> List[List[float]]:

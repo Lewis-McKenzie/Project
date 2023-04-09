@@ -2,15 +2,13 @@ from typing import List
 import tensorflow as tf
 import numpy as np
 
-VOCAB_SIZE = 1024
-
 class BasicModel(tf.keras.Model):
     def __init__(self, encoder: tf.keras.layers.StringLookup, embedding_matrix: np.ndarray):
         super(BasicModel, self).__init__()
         self.encoder = encoder
         self.pipeline = tf.keras.Sequential([
             tf.keras.layers.TextVectorization(
-                max_tokens=embedding_matrix.shape[0],
+                max_tokens=embedding_matrix.shape[0],# ngrams=2, output_mode="tf_idf",
             ),
             tf.keras.layers.Embedding(
                 input_dim=embedding_matrix.shape[0],
@@ -31,7 +29,8 @@ class BasicModel(tf.keras.Model):
         return self.pipeline(inputs)
 
     def adapt_encoder(self, vocab: List[str]) -> None:
-        self.pipeline.layers[0].adapt(vocab)
+        with tf.device("/CPU:0"):
+            self.pipeline.layers[0].adapt(vocab)
 
     def get_vocab(self) -> List[str]:
         return self.pipeline.layers[0].get_vocabulary()
