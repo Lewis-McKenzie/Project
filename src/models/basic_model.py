@@ -6,6 +6,9 @@ class BasicModel(tf.keras.Model):
     def __init__(self, encoder: tf.keras.layers.StringLookup, embedding_matrix: np.ndarray):
         super(BasicModel, self).__init__()
         self.encoder = encoder
+        if embedding_matrix is None:
+            return
+        self.embedding_matrix = embedding_matrix
         self.pipeline = tf.keras.Sequential([
             tf.keras.layers.TextVectorization(
                 max_tokens=embedding_matrix.shape[0],# ngrams=2, output_mode="tf_idf",
@@ -15,12 +18,12 @@ class BasicModel(tf.keras.Model):
                 output_dim=embedding_matrix.shape[1],
                 embeddings_initializer=tf.keras.initializers.Constant(embedding_matrix),
                 mask_zero=True),           
-            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True)),
-            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(100, return_sequences=True)),
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(100)),
             tf.keras.layers.Dense(512, input_shape=(6000,), activation='relu'),
-            tf.keras.layers.Dropout(0.5),
+            tf.keras.layers.Dropout(0.25),
             tf.keras.layers.Dense(256, activation='relu'),
-            tf.keras.layers.Dropout(0.5),
+            tf.keras.layers.Dropout(0.25),
             tf.keras.layers.Dense(128, activation='relu'),
             tf.keras.layers.Dense(self.encoder.vocabulary_size(), activation='sigmoid'),
         ])
@@ -41,3 +44,17 @@ class BasicModel(tf.keras.Model):
     def invert_multi_hot(self, encoded_labels, alpha: float) -> List[str]:
         hot_indices = np.argwhere(encoded_labels >= alpha)[..., 0]
         return np.take(self.encoder.get_vocabulary(), hot_indices)
+
+    def get_config(self):
+        return {"encoder": self.encoder, "embedding_matrix": self.embedding_matrix, "invert_all": self.invert_all, "invert_multi_hot": self.invert_multi_hot}
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+
+def load_model(path: str, encoder: tf.keras.layers.StringLookup) -> BasicModel:
+    m: BasicModel = tf.keras.models.load_model(path, custom_objects={"BasicModel": BasicModel})
+    model = BasicModel(encoder, None)
+    model.pipeline = m.pipeline
+    return model

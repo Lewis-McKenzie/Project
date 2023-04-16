@@ -3,9 +3,6 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Union, List
 
-DIR = "F:\\Documents\\Uni\\PRBX\\Project\\data\\ABSA16_Restaurants_Train_SB1_v2.xml"
-EMB_PATH = "F:\\Documents\\Uni\\PRBX\\Project\\data\\word_embeddings\\glove.6B\\glove.6B.100d.txt"
-
 class Loader:
     @staticmethod
     def load(filepath: str) -> pd.DataFrame:
