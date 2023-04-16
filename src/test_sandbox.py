@@ -3,13 +3,12 @@ import tensorflow as tf
 from utils import Loader, Preprocessor
 from train_sandbox import DIR, EMB_PATH, MODEL_WEIGHTS
 from argumentation import Argument
-from models import BasicModel, load_model
 
 
 def main() -> None:
     df = Loader.load(DIR)
     processor = Preprocessor(df)
-    model = load_model(MODEL_WEIGHTS, processor.polarity_category_encoder)
+    model = Loader.load_model(MODEL_WEIGHTS, processor.polarity_category_encoder)
     
     ALPHA = 0.5
     INDEX = 0

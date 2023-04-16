@@ -11,7 +11,7 @@ class BasicModel(tf.keras.Model):
         self.embedding_matrix = embedding_matrix
         self.pipeline = tf.keras.Sequential([
             tf.keras.layers.TextVectorization(
-                max_tokens=embedding_matrix.shape[0],# ngrams=2, output_mode="tf_idf",
+                max_tokens=embedding_matrix.shape[0],
             ),
             tf.keras.layers.Embedding(
                 input_dim=embedding_matrix.shape[0],
@@ -51,10 +51,3 @@ class BasicModel(tf.keras.Model):
     @classmethod
     def from_config(cls, config):
         return cls(**config)
-
-
-def load_model(path: str, encoder: tf.keras.layers.StringLookup) -> BasicModel:
-    m: BasicModel = tf.keras.models.load_model(path, custom_objects={"BasicModel": BasicModel})
-    model = BasicModel(encoder, None)
-    model.pipeline = m.pipeline
-    return model

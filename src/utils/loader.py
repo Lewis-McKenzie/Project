@@ -2,6 +2,9 @@ import xml.etree.ElementTree as et
 import pandas as pd
 import numpy as np
 from typing import Dict, Union, List
+import tensorflow as tf
+
+from models import BasicModel
 
 class Loader:
     @staticmethod
@@ -42,3 +45,10 @@ class Loader:
                 coefs = np.fromstring(coefs, "f", sep=" ")
                 embeddings_index[word] = coefs
         return embeddings_index
+
+    @staticmethod
+    def load_model(path: str, encoder: tf.keras.layers.StringLookup) -> BasicModel:
+        m: BasicModel = tf.keras.models.load_model(path, custom_objects={"BasicModel": BasicModel})
+        model = BasicModel(encoder, None)
+        model.pipeline = m.pipeline
+        return model
