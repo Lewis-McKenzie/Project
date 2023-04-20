@@ -10,6 +10,7 @@ import tensorflow as tf
 DIR = "F:\\Documents\\Uni\\PRBX\\Project\\data\\ABSA16_Restaurants_Train_SB1_v2.xml"
 EMB_PATH = "F:\\Documents\\Uni\\PRBX\\Project\\data\\word_embeddings\\glove.6B\\glove.6B.100d.txt"
 MODEL_WEIGHTS = "F:\\Documents\\Uni\\PRBX\\Project\\data\\model_weights\\basic_model"
+TEST_DIR = "F:\\Documents\\Uni\\PRBX\\Project\\data\\restaurants_trial_english_sl.xml"
 
 def main() -> None:    
     df = Loader.load(DIR)
@@ -20,18 +21,18 @@ def main() -> None:
     embedding_matrix = processor.make_embedding_matrix(embeddings_index)
 
     LR = 0.005
-    EPOCHS = 5
+    EPOCHS = 30
 
     model = BasicModel(processor.polarity_category_encoder, embedding_matrix)
     model.adapt_encoder(df["text"])
+    ALPHA = 0.5
     model.compile(loss='binary_crossentropy',
                 optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
-                metrics=['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), tf.keras.metrics.F1Score()])
+                metrics=['binary_accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
 
     model.fit(train_dataset, validation_data=validation_dataset, epochs=EPOCHS, verbose=1)
     model.save(MODEL_WEIGHTS)
 
-    ALPHA = 0.5
     INDEX = 0
 
     predict = model.predict(tf.convert_to_tensor(df["text"]))

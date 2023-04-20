@@ -96,7 +96,7 @@ class Argument:
             for i, _ in enumerate(self.data):
                 new_labels[i] = self.acceptability_step(i, fuzzy_labels)
             fuzzy_labels = new_labels.copy()
-            #self.describe(fuzzy_labels)
+        self.describe(fuzzy_labels)
         return fuzzy_labels
 
     def init_fuzz_labels(self) -> List[List[float]]:
@@ -115,7 +115,12 @@ class Argument:
             fuzzy_label_val = fuzzy_labels[target_index][hot_index]
             actual_label_val = self.labels[target_index][hot_index]
             max_attack = self.max_attack(target_index, hot_index, fuzzy_labels)
-            fuzzy_label[hot_index] = min(actual_label_val, (fuzzy_label_val + 1 - max_attack)/2)
+            avg_attack = self.avg_attack(hot_index, fuzzy_labels)
+            sum_attack = self.sum_attack(hot_index, fuzzy_labels)
+            total_attack = self.total_attack(hot_index, fuzzy_labels)
+            sum_support = self.sum_support(target_index, hot_index, fuzzy_labels)
+            total_support = self.total_support(target_index, hot_index, fuzzy_labels)
+            fuzzy_label[hot_index] = min(actual_label_val, (sum_support / total_support + fuzzy_label_val + total_attack - sum_attack)/(total_attack+2))
         return fuzzy_label
             
     def max_attack(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
@@ -126,6 +131,45 @@ class Argument:
                 continue
             max_attack = max(max_attack, label[opposite_index])
         return max_attack
+
+    def avg_attack(self, category_index, fuzzy_labels: List[List[float]]) -> float:
+        s = 0.0
+        t = 0
+        opposite_index = self.opposite_index(category_index)
+        for _, label in enumerate(fuzzy_labels):
+            if label[opposite_index] != 0:
+                t += 1
+            s += label[opposite_index]
+        t = max(t, 1)
+        return s / t
+
+    def sum_attack(self, category_index, fuzzy_labels: List[List[float]]) -> float:
+        s = 0.0
+        opposite_index = self.opposite_index(category_index)
+        for _, label in enumerate(fuzzy_labels):
+            s += label[opposite_index]
+        return s
+
+    def sum_support(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
+        s = 0.0
+        for i, label in enumerate(fuzzy_labels):
+            s += label[category_index]
+        return s
+
+    def total_attack(self, category_index, fuzzy_labels: List[List[float]]) -> float:
+        t = 0
+        opposite_index = self.opposite_index(category_index)
+        for _, label in enumerate(fuzzy_labels):
+            if label[opposite_index] != 0:
+                t += 1
+        return t
+
+    def total_support(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
+        t = 0
+        for i, label in enumerate(fuzzy_labels):
+            if label[category_index] != 0:
+                t += 1
+        return t
 
     def opposite_index(self, index: int) -> int:
         if index == 0:

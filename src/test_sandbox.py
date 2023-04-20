@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from utils import Loader, Preprocessor
-from train_sandbox import DIR, EMB_PATH, MODEL_WEIGHTS
+from train_sandbox import DIR, EMB_PATH, MODEL_WEIGHTS, TEST_DIR
 from argumentation import Argument
 
 
@@ -10,14 +10,22 @@ def main() -> None:
     processor = Preprocessor(df)
     model = Loader.load_model(MODEL_WEIGHTS, processor.polarity_category_encoder)
     
-    ALPHA = 0.5
-    INDEX = 0
+    test_df = Loader.load(TEST_DIR)
+    labels = tf.ragged.constant(processor.polarity_category_values(test_df))
+    encoded_labels = model.encoder(labels).numpy()
+    ALPHA = 0.4
+    LR=0.001
+    model.compile(loss='binary_crossentropy',
+                    optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
+                    metrics=['binary_accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
+    model.evaluate(tf.convert_to_tensor(test_df["text"]), encoded_labels)
 
-    predict = model.predict(tf.convert_to_tensor(df["text"]))
-    print(df["text"][INDEX])
-    print(processor.get_encoded_labels()[INDEX])
+    INDEX = 2
+    predict = model.predict(tf.convert_to_tensor(test_df["text"]))
+    print(test_df["text"][INDEX])
+    print(encoded_labels[INDEX])
     print(predict[INDEX])
-    print(model.invert_multi_hot(processor.get_encoded_labels()[INDEX], ALPHA))
+    print(model.invert_multi_hot(encoded_labels[INDEX], ALPHA))
     print(model.invert_multi_hot(predict[INDEX], ALPHA))
 
     CUT = 10

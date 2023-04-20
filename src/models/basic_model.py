@@ -17,7 +17,9 @@ class BasicModel(tf.keras.Model):
                 input_dim=embedding_matrix.shape[0],
                 output_dim=embedding_matrix.shape[1],
                 embeddings_initializer=tf.keras.initializers.Constant(embedding_matrix),
-                mask_zero=True),           
+                mask_zero=True,
+                #trainable=False,
+            ),           
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(100, return_sequences=True)),
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(100)),
             tf.keras.layers.Dense(512, input_shape=(6000,), activation='relu'),
@@ -30,6 +32,7 @@ class BasicModel(tf.keras.Model):
 
     def call(self, inputs, training=None, mask=None):
         return self.pipeline(inputs)
+        #return np.where(self.pipeline(inputs) > 0.5, 1.0, 0)
 
     def adapt_encoder(self, vocab: List[str]) -> None:
         with tf.device("/CPU:0"):
