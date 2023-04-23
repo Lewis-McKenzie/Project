@@ -75,17 +75,3 @@ class Preprocessor:
 
     def polarity_category_values(self, df: pd.DataFrame) -> List[List[str]]:
         return [["{} {}".format(opinion["polarity"], opinion["category"]) for opinion in opinions] for opinions in df["opinions"]]
-
-    def make_embedding_matrix(self, embeddings_index: Dict[str, List[float]]) -> np.ndarray:
-        voc = self.get_vocab()
-        num_tokens = len(voc) + 2
-        embedding_dim = len(list(embeddings_index.values())[0])
-        word_index = dict(zip(voc, range(len(voc))))
-        embedding_matrix = np.zeros((num_tokens, embedding_dim))
-        for word, i in word_index.items():
-            embedding_vector = embeddings_index.get(word)
-            if embedding_vector is not None:
-                # Words not found in embedding index will be all-zeros.
-                # This includes the representation for "padding" and "OOV"
-                embedding_matrix[i] = embedding_vector
-        return embedding_matrix

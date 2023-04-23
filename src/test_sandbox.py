@@ -8,12 +8,12 @@ from argumentation import Argument
 def main() -> None:
     df = Loader.load(DIR)
     processor = Preprocessor(df)
-    model = Loader.load_model(MODEL_WEIGHTS, processor.polarity_category_encoder)
+    model = Loader.load_model(MODEL_WEIGHTS)
     
     test_df = Loader.load(TEST_DIR)
     labels = tf.ragged.constant(processor.polarity_category_values(test_df))
     encoded_labels = model.encoder(labels).numpy()
-    ALPHA = 0.4
+    ALPHA = 0.5
     LR=0.001
     model.compile(loss='binary_crossentropy',
                     optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
@@ -31,7 +31,7 @@ def main() -> None:
     CUT = 10
 
     argument = Argument(model, df["text"].to_list()[:CUT], predict[:CUT], ALPHA)
-    #argument = Argument(model, df["text"].to_list()[:CUT], processor.get_encoded_labels()[:CUT], ALPHA)
+    #argument = Argument(model, df["text"].to_list()[:CUT], encoded_labels[:CUT], ALPHA)
     fl = argument.fuzzy_labeling(12)
 
 if __name__ == "__main__":

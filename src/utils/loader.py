@@ -47,8 +47,11 @@ class Loader:
         return embeddings_index
 
     @staticmethod
-    def load_model(path: str, encoder: tf.keras.layers.StringLookup) -> BasicModel:
-        m: BasicModel = tf.keras.models.load_model(path, custom_objects={"BasicModel": BasicModel})
-        model = BasicModel(encoder, None)
-        model.pipeline = m.pipeline
+    def load_model(path: str) -> BasicModel:
+        with open(f"{path}\\categories.txt", 'r') as file:
+            cats = file.read()
+        encoder = tf.keras.layers.StringLookup(output_mode="multi_hot")
+        encoder.adapt(cats.split(","))
+        model = BasicModel(encoder)
+        model.pipeline = tf.keras.models.load_model(path)
         return model

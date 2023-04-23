@@ -112,16 +112,21 @@ class Argument:
         hot_indices = [i for i in hot_indices if i != 0 and (i < 13 or i > 24)]
         fuzzy_label = fuzzy_labels[target_index].copy()
         for hot_index in hot_indices:
-            fuzzy_label_val = fuzzy_labels[target_index][hot_index]
-            actual_label_val = self.labels[target_index][hot_index]
-            max_attack = self.max_attack(target_index, hot_index, fuzzy_labels)
-            avg_attack = self.avg_attack(hot_index, fuzzy_labels)
-            sum_attack = self.sum_attack(hot_index, fuzzy_labels)
-            total_attack = self.total_attack(hot_index, fuzzy_labels)
-            sum_support = self.sum_support(target_index, hot_index, fuzzy_labels)
-            total_support = self.total_support(target_index, hot_index, fuzzy_labels)
-            fuzzy_label[hot_index] = min(actual_label_val, (sum_support / total_support + fuzzy_label_val + total_attack - sum_attack)/(total_attack+2))
+            actual_label_val = self.labels[target_index][hot_index]            
+            fuzzy_label[hot_index] = min(actual_label_val, self.new_label(target_index, hot_index, fuzzy_labels))
         return fuzzy_label
+
+    def new_label(self, target_index: int, hot_index: int, fuzzy_labels: List[List[float]]) -> float:
+        fuzzy_label_val = fuzzy_labels[target_index][hot_index]
+        max_attack = self.max_attack(target_index, hot_index, fuzzy_labels)
+        max_support = self.max_support(hot_index, fuzzy_labels)
+        avg_attack = self.avg_attack(hot_index, fuzzy_labels)
+        sum_attack = self.sum_attack(hot_index, fuzzy_labels)
+        total_attack = self.total_attack(hot_index, fuzzy_labels)
+        sum_support = self.sum_support(target_index, hot_index, fuzzy_labels)
+        total_support = self.total_support(target_index, hot_index, fuzzy_labels)
+        ratio_support = total_support/(total_support+total_attack)
+        return (ratio_support * fuzzy_label_val + (1-ratio_support) * ((1 - max_attack)))
             
     def max_attack(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
         opposite_index = self.opposite_index(category_index)
@@ -131,6 +136,12 @@ class Argument:
                 continue
             max_attack = max(max_attack, label[opposite_index])
         return max_attack
+
+    def max_support(self, category_index, fuzzy_labels: List[List[float]]) -> float:
+        max_support = 0.0
+        for _, label in enumerate(fuzzy_labels):
+            max_support = max(max_support, label[category_index])
+        return max_support
 
     def avg_attack(self, category_index, fuzzy_labels: List[List[float]]) -> float:
         s = 0.0
