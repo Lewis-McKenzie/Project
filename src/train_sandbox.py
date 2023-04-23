@@ -9,7 +9,7 @@ import tensorflow as tf
 
 DIR = "F:\\Documents\\Uni\\PRBX\\Project\\data\\ABSA16_Restaurants_Train_SB1_v2.xml"
 EMB_PATH = "F:\\Documents\\Uni\\PRBX\\Project\\data\\word_embeddings\\glove.6B\\glove.6B.100d.txt"
-MODEL_WEIGHTS = "F:\\Documents\\Uni\\PRBX\\Project\\data\\model_weights\\basic_model"
+MODEL_WEIGHTS = "F:\\Documents\\Uni\\PRBX\\Project\\data\\model_weights"
 TEST_DIR = "F:\\Documents\\Uni\\PRBX\\Project\\data\\restaurants_trial_english_sl.xml"
 
 def main() -> None:    
