@@ -18,7 +18,7 @@ def main() -> None:
     model.compile(loss='binary_crossentropy',
                 optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
                 metrics=['binary_accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
-    labels = tf.ragged.constant(processor.polarity_category_values(df))
+    labels = tf.ragged.constant(Preprocessor.polarity_category_values(df))
     encoded_labels = model.encoder(labels).numpy()
     model.evaluate(df["text"], encoded_labels)
     model.save_model(MODEL_WEIGHTS)

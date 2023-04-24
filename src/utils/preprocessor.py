@@ -66,12 +66,13 @@ class Preprocessor:
         label_binarized = self.get_encoded_labels()
         train_df, test_df = train_test_split(self.data, test_size=test_size, stratify=label_binarized[:, 1])
         x_train, x_test = train_df["text"], test_df["text"]
-        y_train, y_test = self.polarity_category_values(train_df), self.polarity_category_values(test_df)
+        y_train, y_test = Preprocessor.polarity_category_values(train_df), Preprocessor.polarity_category_values(test_df)
         return x_train, y_train, x_test, y_test
 
     def get_encoded_labels(self):
-        labels = tf.ragged.constant(self.polarity_category_values(self.data))
+        labels = tf.ragged.constant(Preprocessor.polarity_category_values(self.data))
         return self.polarity_category_encoder(labels).numpy()
 
-    def polarity_category_values(self, df: pd.DataFrame) -> List[List[str]]:
+    @staticmethod
+    def polarity_category_values(df: pd.DataFrame) -> List[List[str]]:
         return [["{} {}".format(opinion["polarity"], opinion["category"]) for opinion in opinions] for opinions in df["opinions"]]

@@ -10,8 +10,7 @@ def main() -> None:
     model = Loader.load_model(MODEL_WEIGHTS, BasicModel.model_name())
     
     test_df = Loader.load(TEST_DIR)
-    processor = Preprocessor(test_df)
-    labels = tf.ragged.constant(processor.polarity_category_values(test_df))
+    labels = tf.ragged.constant(Preprocessor.polarity_category_values(test_df))
     encoded_labels = model.encoder(labels).numpy()
     ALPHA = 0.5
     LR=0.001
