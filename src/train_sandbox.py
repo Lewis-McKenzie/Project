@@ -35,7 +35,7 @@ def main() -> None:
 
     INDEX = 0
 
-    predict = model.predict(tf.convert_to_tensor(df["text"]))
+    predict = model.predict(df["text"])
     print(df["text"][INDEX])
     print(processor.get_encoded_labels()[INDEX])
     print(predict[INDEX])

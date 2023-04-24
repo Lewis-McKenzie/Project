@@ -6,11 +6,10 @@ from argumentation import Argument
 
 
 def main() -> None:
-    df = Loader.load(DIR)
-    processor = Preprocessor(df)
-    model = Loader.load_model(MODEL_WEIGHTS)
+    model = Loader.load_model(MODEL_WEIGHTS, "basic_model")
     
     test_df = Loader.load(TEST_DIR)
+    processor = Preprocessor(test_df)
     labels = tf.ragged.constant(processor.polarity_category_values(test_df))
     encoded_labels = model.encoder(labels).numpy()
     ALPHA = 0.5
@@ -18,10 +17,10 @@ def main() -> None:
     model.compile(loss='binary_crossentropy',
                     optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
                     metrics=['binary_accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
-    model.evaluate(tf.convert_to_tensor(test_df["text"]), encoded_labels)
+    model.evaluate(test_df["text"], encoded_labels)
 
     INDEX = 2
-    predict = model.predict(tf.convert_to_tensor(test_df["text"]))
+    predict = model.predict(test_df["text"])
     print(test_df["text"][INDEX])
     print(encoded_labels[INDEX])
     print(predict[INDEX])
@@ -30,7 +29,7 @@ def main() -> None:
 
     CUT = 10
 
-    argument = Argument(model, df["text"].to_list()[:CUT], predict[:CUT], ALPHA)
+    argument = Argument(model, test_df["text"].to_list()[:CUT], predict[:CUT], ALPHA)
     #argument = Argument(model, df["text"].to_list()[:CUT], encoded_labels[:CUT], ALPHA)
     fl = argument.fuzzy_labeling(12)
 
