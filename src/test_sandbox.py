@@ -2,11 +2,12 @@ import tensorflow as tf
 
 from utils import Loader, Preprocessor
 from train_sandbox import DIR, EMB_PATH, MODEL_WEIGHTS, TEST_DIR
+from models import BasicModel
 from argumentation import Argument
 
 
 def main() -> None:
-    model = Loader.load_model(MODEL_WEIGHTS, "basic_model")
+    model = Loader.load_model(MODEL_WEIGHTS, BasicModel.model_name())
     
     test_df = Loader.load(TEST_DIR)
     processor = Preprocessor(test_df)

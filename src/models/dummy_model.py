@@ -14,8 +14,6 @@ class DummyModel(BasicModel):
     def call(self, inputs, training=None, mask=None):
         return self.pipeline(inputs)
 
-    def save_model(self, path: str) -> None:
-        path += "\\dummy_model"
-        self.pipeline.save(path)
-        with open(f"{path}\\categories.txt", 'w') as file:
-            file.write(",".join(self.encoder.get_vocabulary()))
+    @classmethod
+    def model_name(cls) -> str:
+        return "dummy_model"

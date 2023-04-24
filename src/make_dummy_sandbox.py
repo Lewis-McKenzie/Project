@@ -21,6 +21,7 @@ def main() -> None:
     labels = tf.ragged.constant(processor.polarity_category_values(df))
     encoded_labels = model.encoder(labels).numpy()
     model.evaluate(df["text"], encoded_labels)
+    model.save_model(MODEL_WEIGHTS)
 
     INDEX = 0
 
