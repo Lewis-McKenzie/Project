@@ -7,7 +7,7 @@ from argumentation import Argument
 
 
 def main() -> None:
-    model = Loader.load_model(MODEL_WEIGHTS, BasicModel.model_name())
+    model = Loader.load_model(MODEL_WEIGHTS, "basic_model")
     
     test_df = Loader.load(TEST_DIR)
     labels = tf.ragged.constant(Preprocessor.polarity_category_values(test_df))
