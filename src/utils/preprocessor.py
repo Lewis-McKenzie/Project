@@ -14,6 +14,7 @@ class Preprocessor:
         self.categories = self.init_categories(data["opinions"])
         self.polarity_categories = self.init_polarity_categories(self.categories)
         self.category_encoder = self.init_encoder(self.categories)
+        self.polarity_encoder = self.init_encoder(["positive", "negative", "neutral"])
         self.polarity_category_encoder = self.init_encoder(self.polarity_categories)
 
     def get_vocab(self) -> List[str]:
@@ -42,10 +43,25 @@ class Preprocessor:
     def make_category_dataset(self, batch_size: int, test_size=0.1) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
         x = self.data["text"]
         y = [[opinion["category"] for opinion in opinions] for opinions in self.data["opinions"]]
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, stratify=y)
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)#, stratify=y)
         train_dataset = self.make_dataset(x_train, y_train, self.category_encoder, batch_size)
         test_dataset = self.make_dataset(x_test, y_test, self.category_encoder, batch_size, is_train=False)
         return train_dataset, test_dataset
+    
+    def pair_text_and_categories(self):
+        x = []
+        y = []
+        for i, opinions in enumerate(self.data["opinions"]):
+            cat_pol: Dict[str, Set[str]] = dict()
+            for opinion in opinions:
+                if not opinion["category"] in opinion:
+                    cat_pol[opinion["category"]] = {opinion["polarity"]}
+                else:
+                    cat_pol[opinion["category"]].add(opinion["polarity"])
+            for cat, pols in cat_pol.items():
+                y.append(self.polarity_encoder(tf.ragged.constant(list(pols))).numpy())
+                x.append(cat + " " + self.data["text"][i])
+        return x, y
 
     def make_polarity_category_dataset(self, batch_size: int, test_size=0.1) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
         x_train, y_train, x_test, y_test = self.split_polarity_category(test_size)
@@ -63,16 +79,24 @@ class Preprocessor:
         return dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
     def split_polarity_category(self, test_size: float):
-        label_binarized = self.get_encoded_labels()
+        label_binarized = self.get_polarity_category_encoded_labels()
         train_df, test_df = train_test_split(self.data, test_size=test_size, stratify=label_binarized[:, 1])
         x_train, x_test = train_df["text"], test_df["text"]
         y_train, y_test = Preprocessor.polarity_category_values(train_df), Preprocessor.polarity_category_values(test_df)
         return x_train, y_train, x_test, y_test
 
-    def get_encoded_labels(self):
+    def get_polarity_category_encoded_labels(self):
         labels = tf.ragged.constant(Preprocessor.polarity_category_values(self.data))
         return self.polarity_category_encoder(labels).numpy()
+    
+    def get_category_encoded_labels(self):
+        labels = tf.ragged.constant(Preprocessor.category_values(self.data))
+        return self.category_encoder(labels).numpy()
 
     @staticmethod
     def polarity_category_values(df: pd.DataFrame) -> List[List[str]]:
         return [["{} {}".format(opinion["polarity"], opinion["category"]) for opinion in opinions] for opinions in df["opinions"]]
+    
+    @staticmethod
+    def category_values(df: pd.DataFrame) -> List[List[str]]:
+        return [[opinion["category"] for opinion in opinions] for opinions in df["opinions"]]

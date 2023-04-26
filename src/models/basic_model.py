@@ -3,11 +3,12 @@ import tensorflow as tf
 import numpy as np
 
 class BasicModel(tf.keras.Model):
-    def __init__(self, encoder: tf.keras.layers.StringLookup, vocab_size=1024, embedding_size=100):
+    def __init__(self, encoder: tf.keras.layers.StringLookup, vocab_size=1024, embedding_size=100, name="basic_model"):
         super(BasicModel, self).__init__()
         self.encoder = encoder
         self.vocab_size = vocab_size
         self.embedding_size = embedding_size
+        self.model_name = name
         self.pipeline = tf.keras.Sequential([
             tf.keras.layers.TextVectorization(
                 max_tokens=vocab_size,
@@ -74,12 +75,8 @@ class BasicModel(tf.keras.Model):
     def from_config(cls, config):
         return cls(**config)
 
-    @classmethod
-    def model_name(cls) -> str:
-        return "basic_model"
-
     def save_model(self, path: str) -> None:
-        path += f"\\{self.model_name()}"
+        path += f"\\{self.name}"
         self.pipeline.save(path)
         with open(f"{path}\\categories.txt", 'w') as file:
             file.write(",".join(self.encoder.get_vocabulary()))

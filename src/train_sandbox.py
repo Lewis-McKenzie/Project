@@ -37,9 +37,9 @@ def main() -> None:
 
     predict = model.predict(df["text"])
     print(df["text"][INDEX])
-    print(processor.get_encoded_labels()[INDEX])
+    print(processor.get_polarity_category_encoded_labels()[INDEX])
     print(predict[INDEX])
-    print(model.invert_multi_hot(processor.get_encoded_labels()[INDEX], ALPHA))
+    print(model.invert_multi_hot(processor.get_polarity_category_encoded_labels()[INDEX], ALPHA))
     print(model.invert_multi_hot(predict[INDEX], ALPHA))
 
 
