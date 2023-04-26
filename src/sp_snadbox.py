@@ -13,7 +13,7 @@ def main() -> None:
     processor = Preprocessor(df)
     x, y = processor.pair_text_and_categories()
     print(x[0], y[0])
-    #train_dataset, validation_dataset = processor.make_category_dataset(16)
+    train_dataset, validation_dataset = processor.make_polarity_dataset(16)
 
     embeddings_index = Loader.load_word_embedings(EMB_PATH)
 
@@ -27,18 +27,19 @@ def main() -> None:
     model.compile(loss='binary_crossentropy',
                 optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
                 metrics=['binary_accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
-
-    model.fit(tf.convert_to_tensor(x), tf.convert_to_tensor(y), epochs=EPOCHS, verbose=1)
-    #model.fit(train_dataset, validation_data=validation_dataset, epochs=EPOCHS, verbose=1)
+    model.fit(train_dataset, validation_data=validation_dataset, epochs=EPOCHS, verbose=1)
     model.save_model(MODEL_WEIGHTS)
 
     INDEX = 0
 
-    predict = model.predict([x[INDEX]])
+    labels = tf.ragged.constant(y)
+    label_binarized = model.encoder(labels).numpy()
+
+    predict = model.predict(x)
     print(x[INDEX])
-    print(y[INDEX])
+    print(label_binarized[INDEX])
     print(predict[INDEX])
-    print(model.invert_multi_hot(y[INDEX], ALPHA))
+    print(model.invert_multi_hot(label_binarized[INDEX], ALPHA))
     print(model.invert_multi_hot(predict[INDEX], ALPHA))
 
 

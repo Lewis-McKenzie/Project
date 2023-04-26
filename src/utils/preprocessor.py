@@ -47,7 +47,14 @@ class Preprocessor:
         train_dataset = self.make_dataset(x_train, y_train, self.category_encoder, batch_size)
         test_dataset = self.make_dataset(x_test, y_test, self.category_encoder, batch_size, is_train=False)
         return train_dataset, test_dataset
-    
+
+    def make_polarity_dataset(self, batch_size: int, test_size=0.1) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
+        x, y = self.pair_text_and_categories()
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)#, stratify=y)
+        train_dataset = self.make_dataset(x_train, y_train, self.polarity_encoder, batch_size)
+        test_dataset = self.make_dataset(x_test, y_test, self.polarity_encoder, batch_size, is_train=False)
+        return train_dataset, test_dataset
+
     def pair_text_and_categories(self):
         x = []
         y = []
@@ -59,7 +66,7 @@ class Preprocessor:
                 else:
                     cat_pol[opinion["category"]].add(opinion["polarity"])
             for cat, pols in cat_pol.items():
-                y.append(self.polarity_encoder(tf.ragged.constant(list(pols))).numpy())
+                y.append(list(pols))
                 x.append(cat + " " + self.data["text"][i])
         return x, y
 
