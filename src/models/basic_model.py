@@ -76,7 +76,7 @@ class BasicModel(tf.keras.Model):
         return cls(**config)
 
     def save_model(self, path: str) -> None:
-        path += f"\\{self.name}"
+        path += f"\\{self.model_name}"
         self.pipeline.save(path)
         with open(f"{path}\\categories.txt", 'w') as file:
             file.write(",".join(self.encoder.get_vocabulary()))
