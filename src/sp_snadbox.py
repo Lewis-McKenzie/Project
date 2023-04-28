@@ -11,8 +11,6 @@ from train_sandbox import DIR, EMB_PATH, MODEL_WEIGHTS
 def main() -> None:    
     df = Loader.load(DIR)
     processor = Preprocessor(df)
-    x, y = processor.pair_text_and_categories()
-    print(x[0], y[0])
     train_dataset, validation_dataset = processor.make_polarity_dataset(16)
 
     embeddings_index = Loader.load_word_embedings(EMB_PATH)

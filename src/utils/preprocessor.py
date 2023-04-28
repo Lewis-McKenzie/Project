@@ -49,26 +49,12 @@ class Preprocessor:
         return train_dataset, test_dataset
 
     def make_polarity_dataset(self, batch_size: int, test_size=0.1) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
-        x, y = self.pair_text_and_categories()
+        x, y = Preprocessor.pair_text_and_categories(self.data)
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)#, stratify=y)
         train_dataset = self.make_dataset(x_train, y_train, self.polarity_encoder, batch_size)
         test_dataset = self.make_dataset(x_test, y_test, self.polarity_encoder, batch_size, is_train=False)
         return train_dataset, test_dataset
 
-    def pair_text_and_categories(self):
-        x = []
-        y = []
-        for i, opinions in enumerate(self.data["opinions"]):
-            cat_pol: Dict[str, Set[str]] = dict()
-            for opinion in opinions:
-                if not opinion["category"] in opinion:
-                    cat_pol[opinion["category"]] = {opinion["polarity"]}
-                else:
-                    cat_pol[opinion["category"]].add(opinion["polarity"])
-            for cat, pols in cat_pol.items():
-                y.append(list(pols))
-                x.append(cat + " " + self.data["text"][i])
-        return x, y
 
     def make_polarity_category_dataset(self, batch_size: int, test_size=0.1) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
         x_train, y_train, x_test, y_test = self.split_polarity_category(test_size)
@@ -107,3 +93,19 @@ class Preprocessor:
     @staticmethod
     def category_values(df: pd.DataFrame) -> List[List[str]]:
         return [[opinion["category"] for opinion in opinions] for opinions in df["opinions"]]
+
+    @staticmethod
+    def pair_text_and_categories(df):
+        x = []
+        y = []
+        for i, opinions in enumerate(df["opinions"]):
+            cat_pol: Dict[str, Set[str]] = dict()
+            for opinion in opinions:
+                if not opinion["category"] in opinion:
+                    cat_pol[opinion["category"]] = {opinion["polarity"]}
+                else:
+                    cat_pol[opinion["category"]].add(opinion["polarity"])
+            for cat, pols in cat_pol.items():
+                y.append(list(pols))
+                x.append(cat + " " + df["text"][i])
+        return tf.convert_to_tensor(x), y
