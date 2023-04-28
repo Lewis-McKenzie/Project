@@ -51,7 +51,7 @@ class Loader:
         path += f"\\{name}"
         with open(f"{path}\\categories.txt", 'r') as file:
             cats = file.read()
-        encoder = tf.keras.layers.StringLookup(output_mode="multi_hot")
+        encoder = tf.keras.layers.StringLookup(output_mode="multi_hot", num_oov_indices=0)
         encoder.adapt(cats.split(","))
         model = BasicModel(encoder)
         model.pipeline = tf.keras.models.load_model(path)

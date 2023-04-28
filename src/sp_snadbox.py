@@ -24,12 +24,13 @@ def main() -> None:
     ALPHA = 0.5
     model.compile(loss='binary_crossentropy',
                 optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
-                metrics=['binary_accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
+                metrics=['accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
     model.fit(train_dataset, validation_data=validation_dataset, epochs=EPOCHS, verbose=1)
     model.save_model(MODEL_WEIGHTS)
 
     INDEX = 0
 
+    x, y = Preprocessor.pair_text_and_categories(df)
     labels = tf.ragged.constant(y)
     label_binarized = model.encoder(labels).numpy()
 

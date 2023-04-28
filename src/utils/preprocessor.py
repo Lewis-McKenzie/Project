@@ -36,7 +36,7 @@ class Preprocessor:
 
     def init_encoder(self, options: List[str]) -> tf.keras.layers.StringLookup:
         values = tf.ragged.constant(options)
-        encoder = tf.keras.layers.StringLookup(output_mode="multi_hot")
+        encoder = tf.keras.layers.StringLookup(output_mode="multi_hot", num_oov_indices=0)
         encoder.adapt(values)
         return encoder
 
@@ -108,4 +108,4 @@ class Preprocessor:
             for cat, pols in cat_pol.items():
                 y.append(list(pols))
                 x.append(cat + " " + df["text"][i])
-        return tf.convert_to_tensor(x), y
+        return x, y

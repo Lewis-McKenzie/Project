@@ -11,17 +11,18 @@ def main() -> None:
     
     test_df = Loader.load(TEST_DIR)
     x, y = Preprocessor.pair_text_and_categories(test_df)
+    x = tf.convert_to_tensor(x)
     labels = tf.ragged.constant(y)
     encoded_labels = model.encoder(labels).numpy()
     ALPHA = 0.5
     LR=0.001
     model.compile(loss='binary_crossentropy',
                     optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
-                    metrics=['binary_accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
+                    metrics=['accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
     model.evaluate(x, encoded_labels)
 
     INDEX = 2
-    predict = model.predict(test_df["text"])
+    predict = model.predict(x)
     print(x[INDEX])
     print(encoded_labels[INDEX])
     print(predict[INDEX])
