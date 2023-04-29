@@ -2,12 +2,11 @@ import tensorflow as tf
 from typing import List, Dict
 
 from utils import Loader, MODEL_PATH, RESTAURANT_TEST_PATH
-from models import BasicModel
 from argumentation import Argument
 
 
 def main() -> None:
-    ALPHA = 0.4
+    ALPHA = 0.5
 
     acd_model = Loader.load_model(MODEL_PATH, "acd_model")
     polarity_model = Loader.load_model(MODEL_PATH, "polarity_model")

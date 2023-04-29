@@ -27,11 +27,8 @@ class Loader:
                 entry["text"] = text_elem.text.lower()
                 opinions = []
                 for opinion in sentence.iter("Opinion"):
-                    opinions.append({"target": opinion.attrib["target"],
-                                    "category": opinion.attrib["category"],
-                                    "polarity": opinion.attrib["polarity"],
-                                    "from": opinion.attrib["from"],
-                                    "to": opinion.attrib["to"]})
+                    opinions.append({"category": opinion.attrib["category"],
+                                     "polarity": opinion.attrib["polarity"]})
                 entry["opinions"] = opinions
                 d.append(entry)
         return d
