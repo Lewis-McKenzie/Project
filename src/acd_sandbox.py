@@ -1,10 +1,14 @@
-from utils import Loader, Preprocessor, RESTAURANT_TRAIN_PATH, LAPTOP_TRAIN_PATH, GLOVE_EMBEDINGS_PATH, MODEL_PATH
+from utils import Loader, Preprocessor, RESTAURANT_TRAIN_PATH, LAPTOP_TRAIN_PATH, GLOVE_EMBEDINGS_PATH, MODEL_PATH, LAPTOP_TEST_PATH, RESTAURANT_TEST_PATH
 from models import BasicModel
 import tensorflow as tf
 
-def train(filepath, model_name) -> None:    
+def train(filepath, model_name, test_filepath) -> None:    
     df = Loader.load(filepath)
     processor = Preprocessor(df)
+
+    # ensure test exclusive categories are encoded
+    test_df = Loader.load(test_filepath)
+    processor.update_categories(list(df["opinions"]) + list(test_df["opinions"]))
     train_dataset, validation_dataset = processor.make_category_dataset(16)
 
     embeddings_index = Loader.load_word_embedings(GLOVE_EMBEDINGS_PATH)
@@ -33,8 +37,8 @@ def train(filepath, model_name) -> None:
     print(model.invert_multi_hot(predict[INDEX], ALPHA))
 
 def main() -> None:
-    train(RESTAURANT_TRAIN_PATH, "acd_rest_model")
-    train(LAPTOP_TRAIN_PATH, "acd_lapt_model")
+    train(RESTAURANT_TRAIN_PATH, "acd_rest_model", RESTAURANT_TEST_PATH)
+    train(LAPTOP_TRAIN_PATH, "acd_lapt_model", LAPTOP_TEST_PATH)
 
 if __name__ == "__main__":
     main()

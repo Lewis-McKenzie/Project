@@ -31,6 +31,14 @@ class Preprocessor:
                 categories.add(entry["category"])
         return list(categories)
 
+    def update_categories(self, opinions: List[List[Dict[str, str]]]) -> None:
+        categories = set()
+        for opinion in opinions:
+            for entry in opinion:
+                categories.add(entry["category"])
+        self.categories = list(categories)
+        self.category_encoder = self.init_encoder(self.categories)
+
     def init_polarity_categories(self, categories: List[str]) -> List[str]:
         return [f"{polarity} {category}" for polarity in ["positive", "negative", "neutral"] for category in categories]
 
