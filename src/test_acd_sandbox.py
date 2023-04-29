@@ -1,9 +1,7 @@
 import tensorflow as tf
 
 from utils import Loader, Preprocessor
-from train_sandbox import DIR, EMB_PATH, MODEL_WEIGHTS, TEST_DIR
-from models import BasicModel
-from argumentation import Argument
+from train_sandbox import MODEL_WEIGHTS, TEST_DIR
 
 
 def main() -> None:
@@ -26,12 +24,6 @@ def main() -> None:
     print(predict[INDEX])
     print(model.invert_multi_hot(encoded_labels[INDEX], ALPHA))
     print(model.invert_multi_hot(predict[INDEX], ALPHA))
-
-    CUT = 10
-
-    argument = Argument(model, test_df["text"].to_list()[:CUT], predict[:CUT], ALPHA)
-    #argument = Argument(model, df["text"].to_list()[:CUT], encoded_labels[:CUT], ALPHA)
-    fl = argument.fuzzy_labeling(12)
 
 if __name__ == "__main__":
     main()

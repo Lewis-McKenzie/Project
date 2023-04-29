@@ -1,92 +1,46 @@
-from typing import List, Set
+from typing import List, Set, Dict
 import numpy as np
 
 from models import BasicModel
 
+POSITIVE = 0
+NEGATIVE = 2
+
 class Argument:
-    def __init__(self, model: BasicModel, data: List[str], labels: List[List[float]], alpha: float) -> None:
-        self.model = model
-        self.data = data
-        self.labels = labels
+    def __init__(self, model_results: Dict[str, Dict[str, List[float]]], alpha: float) -> None:
+        self.model_results = model_results
         self.alpha = alpha
-        self.category_labels = self.model.invert_all(self.labels, alpha)
-    
-    def change_alpha(self, alpha: float) -> None:
-        self.alpha = alpha
-        self.category_labels = self.model.invert_all(self.labels, alpha)
 
     def attack(self, argument: str) -> List[str]:
         attackers = []
-        index = self.data.index(argument)
-        opposites = self.opposites(self.category_labels[index])
-        for i, categories in enumerate(self.category_labels):
-            if opposites.intersection(set(categories)) != set():
-                attackers.append(self.data[i])
+        if not argument in self.model_results.keys():
+            return []         
+        arguments = self.model_results[argument]
+        for category in arguments.keys():
+            for arg in self.arguments_with_category(category):
+                if self.does_attack(arg, argument, category):
+                    attackers.append(arg)
         return attackers
 
-    def opposites(self, categories: List[str]) -> Set[str]:
-        opposites: Set[str] = set()
-        for category in categories:
-            if "positive" in category:
-                opposites.add(category.replace("positive", "negative"))
-            elif "negative" in category:
-                opposites.add(category.replace("negative", "positive"))
-        return opposites
+    def arguments_with_category(self, category: str) -> List[str]:
+        args = []
+        for text, opinions in self.model_results.items():
+            if category in opinions.keys():
+                args.append(text)
+        return args
 
-    def is_conflict_free(self, arguments: List[str]) -> bool:
-        attacks: Set[str] = set() # set of categories attacked by the given arguments
-        for text in arguments:
-            index = self.data.index(text)
-            # if the current item attacks any of the given arguments, the set is not conflict free
-            if attacks.intersection(set(self.category_labels[index])) != set():
-                return False
-            opposites = self.opposites(self.category_labels[index])
-            for category in opposites:
-                attacks.add(category)
-        return True
+    def does_attack(self, attacker: str, argument: str, category: str) -> bool:
+        if not category in self.model_results[argument].keys() or not category in self.model_results[attacker].keys():
+            return False
+        pol1 = self.model_results[argument][category]
+        pol2 = self.model_results[attacker][category]
+        return (self.is_positive(pol1) and self.is_negative(pol2)) or (self.is_positive(pol2) and self.is_negative(pol1))
 
-    def defends(self, arguments: List[str], target: str) -> bool:
-        categories_defended = self.categories_of(arguments)
-        target_categories = self.category_labels[self.data.index(target)]
-        return categories_defended.intersection(target_categories) == set(target_categories)
+    def is_positive(self, polarity: List[float]) -> bool:
+        return polarity[POSITIVE] >= self.alpha
 
-    def defended_by(self, arguments: List[str]) -> Set[str]:
-        categories_defended = self.categories_of(arguments)
-        arguments_defended: Set[str] = set()
-        for i, categories in enumerate(self.category_labels):
-            if categories_defended.intersection(categories) == set(categories):
-                arguments_defended.add(self.data[i])
-        return arguments_defended
-
-    def categories_of(self, arguments: List[str]) -> Set[str]:
-        target_categories: Set[str] = set()
-        for argument in arguments:
-            for category in self.category_labels[self.data.index(argument)]:
-                target_categories.add(category)
-        return target_categories
-
-    def is_admissable(self, arguments: List[str]) -> bool:
-        return self.is_conflict_free(arguments) and set(arguments).issubset(self.defended_by(arguments))
-
-    def is_complete_extension(self, arguments: List[str]) -> bool:
-        return self.is_conflict_free(arguments) and set(arguments) == self.defended_by(arguments)
-
-    def is_grounded_extension(self, arguments: List[str]) -> bool:
-        return self.is_conflict_free(arguments)
-
-    def is_preffered_extension(self, arguments: List[str]) -> bool:
-        return self.is_conflict_free(arguments)
-
-    def is_stable_etension(self, arguments: List[str]) -> bool:
-        other_arguments = set(self.data).difference(arguments)
-        categories_defended = self.categories_of(arguments)
-        categories_attacked = self.opposites(list(categories_defended))
-        for argument in other_arguments:
-            categories = self.category_labels[self.data.index(argument)]
-            if categories_attacked.intersection(categories) == set():
-                return False
-        return self.is_preffered_extension(arguments)
-    
+    def is_negative(self, polarity: List[float]) -> bool:
+        return polarity[NEGATIVE] >= self.alpha
 
     #TODO: algorithm only works on digraphs
     def fuzzy_labeling(self, iters: int) -> List[List[float]]:
