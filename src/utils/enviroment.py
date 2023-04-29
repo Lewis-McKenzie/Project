@@ -1,4 +1,5 @@
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 PROJECT_PATH = os.getcwd()
 DATA_PATH = os.path.join(PROJECT_PATH, "data")

@@ -1,10 +1,5 @@
-import numpy as np
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 from utils import Loader, Preprocessor, RESTAURANT_TRAIN_PATH, GLOVE_EMBEDINGS_PATH, MODEL_PATH
 from models import BasicModel
-from argumentation import Argument
 import tensorflow as tf
 
 def main() -> None:    
