@@ -1,13 +1,12 @@
 import tensorflow as tf
 
-from utils import Loader, Preprocessor
-from train_sandbox import MODEL_WEIGHTS, TEST_DIR
+from utils import Loader, Preprocessor, MODEL_PATH, RESTAURANT_TEST_PATH
 
 
 def main() -> None:
-    model = Loader.load_model(MODEL_WEIGHTS, "acd_model")
+    model = Loader.load_model(MODEL_PATH, "acd_model")
     
-    test_df = Loader.load(TEST_DIR)
+    test_df = Loader.load(RESTAURANT_TEST_PATH)
     labels = tf.ragged.constant(Preprocessor.category_values(test_df))
     encoded_labels = model.encoder(labels).numpy()
     ALPHA = 0.5

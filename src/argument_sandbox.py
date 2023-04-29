@@ -1,8 +1,7 @@
 import tensorflow as tf
 from typing import List, Dict
 
-from utils import Loader, Preprocessor
-from train_sandbox import DIR, EMB_PATH, MODEL_WEIGHTS, TEST_DIR
+from utils import Loader, MODEL_PATH, RESTAURANT_TEST_PATH
 from models import BasicModel
 from argumentation import Argument
 
@@ -10,10 +9,10 @@ from argumentation import Argument
 def main() -> None:
     ALPHA = 0.4
 
-    acd_model = Loader.load_model(MODEL_WEIGHTS, "acd_model")
-    polarity_model = Loader.load_model(MODEL_WEIGHTS, "polarity_model")
+    acd_model = Loader.load_model(MODEL_PATH, "acd_model")
+    polarity_model = Loader.load_model(MODEL_PATH, "polarity_model")
     
-    test_df = Loader.load(TEST_DIR)
+    test_df = Loader.load(RESTAURANT_TEST_PATH)
     encoded_predicted_categories = acd_model.predict(test_df["text"])
     predicted_categories = acd_model.invert_all(encoded_predicted_categories, ALPHA)
     text_with_categories = [f"{category} {test_df.text[i]}" for i, categories in enumerate(predicted_categories) for category in categories]

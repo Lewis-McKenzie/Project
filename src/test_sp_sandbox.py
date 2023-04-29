@@ -1,15 +1,12 @@
 import tensorflow as tf
 
-from utils import Loader, Preprocessor
-from train_sandbox import DIR, EMB_PATH, MODEL_WEIGHTS, TEST_DIR
-from models import BasicModel
-from argumentation import Argument
+from utils import Loader, Preprocessor, MODEL_PATH, RESTAURANT_TEST_PATH
 
 
 def main() -> None:
-    model = Loader.load_model(MODEL_WEIGHTS, "polarity_model")
+    model = Loader.load_model(MODEL_PATH, "polarity_model")
     
-    test_df = Loader.load(TEST_DIR)
+    test_df = Loader.load(RESTAURANT_TEST_PATH)
     x, y = Preprocessor.pair_text_and_categories(test_df)
     x = tf.convert_to_tensor(x)
     labels = tf.ragged.constant(y)
