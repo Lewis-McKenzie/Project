@@ -28,9 +28,9 @@ def main() -> None:
         else:
             results[text][category] = encoded_predicted_polarities[i]
 
-    argument = Argument(model, test_df["text"].to_list()[:CUT], predict[:CUT], ALPHA)
-    #argument = Argument(model, df["text"].to_list()[:CUT], encoded_labels[:CUT], ALPHA)
-    fl = argument.fuzzy_labeling(12)
+    argument = Argument(results, ALPHA)
+    fl = argument.fuzzy_labeling(1)
+    argument.describe_category(fl, "RESTAURANT#GENERAL")
 
 if __name__ == "__main__":
     main()

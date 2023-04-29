@@ -4,12 +4,26 @@ import numpy as np
 from models import BasicModel
 
 POSITIVE = 0
+NEUTRAL = 1
 NEGATIVE = 2
 
 class Argument:
     def __init__(self, model_results: Dict[str, Dict[str, List[float]]], alpha: float) -> None:
         self.model_results = model_results
         self.alpha = alpha
+
+    def args_that_attack(self, argument: str, category: str, polarity: int) -> List[str]:
+        attackers: List[str] = []
+        opposite_polarity = 2 - polarity
+        for text in self.arguments_with_category(category):
+            if text == argument:
+                return attackers
+            if self.model_results[text][category][opposite_polarity] >= self.alpha:
+                attackers.append(text)
+            else:
+                attackers = []
+        return attackers
+
 
     def attack(self, argument: str) -> List[str]:
         attackers = []
@@ -43,116 +57,63 @@ class Argument:
         return polarity[NEGATIVE] >= self.alpha
 
     #TODO: algorithm only works on digraphs
-    def fuzzy_labeling(self, iters: int) -> List[List[float]]:
-        fuzzy_labels = self.init_fuzz_labels()
-        new_labels = fuzzy_labels.copy()
+    def fuzzy_labeling(self, iters: int) -> Dict[str, Dict[str, List[float]]]:
+        fuzzy_labels = self.init_fuzzy_labels()
         for _ in range(iters):
-            for i, _ in enumerate(self.data):
-                new_labels[i] = self.acceptability_step(i, fuzzy_labels)
+            new_labels = {}
+            for text, arguments in fuzzy_labels.items():
+                arg = {}
+                for category in arguments.keys():
+                    arg[category] = [self.update_acceptability(fuzzy_labels, text, category, p) for p in range(3)]
+                new_labels[text] = arg
             fuzzy_labels = new_labels.copy()
-        self.describe(fuzzy_labels)
         return fuzzy_labels
 
-    def init_fuzz_labels(self) -> List[List[float]]:
-        labels = []
-        for label in self.labels:
-            l = [i if i >= self.alpha else 0.0 for i in label]
-            labels.append(l)
-        return labels
+    def init_fuzzy_labels(self) -> Dict[str, Dict[str, List[float]]]:
+        fuzzy_labels = dict()
+        for text, arguments in self.model_results.items():
+            arg = {}
+            for category in arguments.keys():
+                arg[category] = [self.trustworthy_degree(text, category, p) for p in range(3)]
+            fuzzy_labels[text] = arg
+        return fuzzy_labels
 
-    def acceptability_step(self, target_index: int, fuzzy_labels: List[List[float]]) -> List[float]:
-        hot_indices: List[int] = np.argwhere(self.labels[target_index] >= self.alpha)[..., 0]
-        # remove neutrals
-        hot_indices = [i for i in hot_indices if i != 0 and (i < 13 or i > 24)]
-        fuzzy_label = fuzzy_labels[target_index].copy()
-        for hot_index in hot_indices:
-            actual_label_val = self.labels[target_index][hot_index]            
-            fuzzy_label[hot_index] = min(actual_label_val, self.new_label(target_index, hot_index, fuzzy_labels))
-        return fuzzy_label
-
-    def new_label(self, target_index: int, hot_index: int, fuzzy_labels: List[List[float]]) -> float:
-        fuzzy_label_val = fuzzy_labels[target_index][hot_index]
-        max_attack = self.max_attack(target_index, hot_index, fuzzy_labels)
-        max_support = self.max_support(hot_index, fuzzy_labels)
-        avg_attack = self.avg_attack(hot_index, fuzzy_labels)
-        sum_attack = self.sum_attack(hot_index, fuzzy_labels)
-        total_attack = self.total_attack(hot_index, fuzzy_labels)
-        sum_support = self.sum_support(target_index, hot_index, fuzzy_labels)
-        total_support = self.total_support(target_index, hot_index, fuzzy_labels)
-        ratio_support = total_support/(total_support+total_attack)
-        return (ratio_support * fuzzy_label_val + (1-ratio_support) * ((1 - max_attack)))
-            
-    def max_attack(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
-        opposite_index = self.opposite_index(category_index)
-        max_attack = 0.0
-        for i, label in enumerate(fuzzy_labels):
-            if i == target_index:
-                continue
-            max_attack = max(max_attack, label[opposite_index])
-        return max_attack
-
-    def max_support(self, category_index, fuzzy_labels: List[List[float]]) -> float:
-        max_support = 0.0
-        for _, label in enumerate(fuzzy_labels):
-            max_support = max(max_support, label[category_index])
-        return max_support
-
-    def avg_attack(self, category_index, fuzzy_labels: List[List[float]]) -> float:
-        s = 0.0
-        t = 0
-        opposite_index = self.opposite_index(category_index)
-        for _, label in enumerate(fuzzy_labels):
-            if label[opposite_index] != 0:
-                t += 1
-            s += label[opposite_index]
-        t = max(t, 1)
-        return s / t
-
-    def sum_attack(self, category_index, fuzzy_labels: List[List[float]]) -> float:
-        s = 0.0
-        opposite_index = self.opposite_index(category_index)
-        for _, label in enumerate(fuzzy_labels):
-            s += label[opposite_index]
-        return s
-
-    def sum_support(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
-        s = 0.0
-        for i, label in enumerate(fuzzy_labels):
-            s += label[category_index]
-        return s
-
-    def total_attack(self, category_index, fuzzy_labels: List[List[float]]) -> float:
-        t = 0
-        opposite_index = self.opposite_index(category_index)
-        for _, label in enumerate(fuzzy_labels):
-            if label[opposite_index] != 0:
-                t += 1
-        return t
-
-    def total_support(self, target_index: int, category_index, fuzzy_labels: List[List[float]]) -> float:
-        t = 0
-        for i, label in enumerate(fuzzy_labels):
-            if label[category_index] != 0:
-                t += 1
-        return t
-
-    def opposite_index(self, index: int) -> int:
-        if index == 0:
-            return index
-        elif index < 13:
-            return 24 + index
-        elif index > 24:
-            return index - 24
-        else:
-            return index
-
-    def describe(self, fl: List[List[float]]) -> None:
-        labels = self.init_fuzz_labels()
-        for i, l in enumerate(fl):
-            for hot in np.argwhere(self.labels[i] >= self.alpha)[..., 0]:
-                cat = np.take(self.model.encoder.get_vocabulary(), hot)
-                print(f"{cat}: {labels[i][hot]} -> {l[hot]}")
+    def trustworthy_degree(self, argument: str, category: str, polarity: int) -> float:
+        return 1.0 * self.model_results[argument][category][polarity]
+    
+    def update_acceptability(self, fuzzy_labels: Dict[str, Dict[str, List[float]]], argument: str, category: str, polarity: int) -> float:
+        if polarity == NEUTRAL:
+            return fuzzy_labels[argument][category][polarity]
+        if category == "AMBIENCE#GENERAL":
+            pass
+        args = self.arguments_with_category(category)
+        opposite_polarity = 2 - polarity
+        max_pol = 0.0
+        for arg in self.args_that_attack(argument, category, polarity):
+            max_pol = max(max_pol, fuzzy_labels[arg][category][opposite_polarity])
+        return min(self.trustworthy_degree(argument, category, polarity), (fuzzy_labels[argument][category][polarity] + 1 - max_pol)/2)
+ 
+    def describe(self, fl: Dict[str, Dict[str, List[float]]]) -> None:
+        for text, arguments in fl.items():
+            print(text)
+            for category in arguments.keys():
+                print(category)
+                print("\tPOSITIVE {} -> {}".format(self.model_results[text][category][POSITIVE], fl[text][category][POSITIVE]))
+                print("\tNEGATIVE {} -> {}".format(self.model_results[text][category][NEGATIVE], fl[text][category][NEGATIVE]))
             print()
+        print("-------------------")
+
+    def describe_category(self, fl: Dict[str, Dict[str, List[float]]], category: str) -> None:
+        for text, arguments in fl.items():
+            if category in arguments.keys():
+                print(text)
+                print(category)
+                print("\tPOSITIVE {} -> {}".format(self.model_results[text][category][POSITIVE], fl[text][category][POSITIVE]))
+                print("\t\t{}".format(self.args_that_attack(text, category, POSITIVE)))
+                print("\tNEGATIVE {} -> {}".format(self.model_results[text][category][NEGATIVE], fl[text][category][NEGATIVE]))
+                print("\t\t{}".format(self.args_that_attack(text, category, NEGATIVE)))
+
+                print()
         print("-------------------")
 
     def support(self, text: str) -> List[str]:
