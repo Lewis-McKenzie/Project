@@ -16,6 +16,7 @@ def main() -> None:
     encoded_labels = model.encoder(labels).numpy()
     ALPHA = 0.5
     LR=0.001
+
     model.compile(loss='binary_crossentropy',
                     optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
                     metrics=['accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
@@ -28,12 +29,6 @@ def main() -> None:
     print(predict[INDEX])
     print(model.invert_multi_hot(encoded_labels[INDEX], ALPHA))
     print(model.invert_multi_hot(predict[INDEX], ALPHA))
-
-    CUT = 10
-
-    argument = Argument(model, test_df["text"].to_list()[:CUT], predict[:CUT], ALPHA)
-    #argument = Argument(model, df["text"].to_list()[:CUT], encoded_labels[:CUT], ALPHA)
-    fl = argument.fuzzy_labeling(12)
 
 if __name__ == "__main__":
     main()

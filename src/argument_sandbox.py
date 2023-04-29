@@ -8,7 +8,7 @@ from argumentation import Argument
 
 
 def main() -> None:
-    ALPHA = 0.1
+    ALPHA = 0.4
 
     acd_model = Loader.load_model(MODEL_WEIGHTS, "acd_model")
     polarity_model = Loader.load_model(MODEL_WEIGHTS, "polarity_model")
