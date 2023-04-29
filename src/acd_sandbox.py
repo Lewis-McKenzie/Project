@@ -1,9 +1,9 @@
-from utils import Loader, Preprocessor, RESTAURANT_TRAIN_PATH, GLOVE_EMBEDINGS_PATH, MODEL_PATH
+from utils import Loader, Preprocessor, RESTAURANT_TRAIN_PATH, LAPTOP_TRAIN_PATH, GLOVE_EMBEDINGS_PATH, MODEL_PATH
 from models import BasicModel
 import tensorflow as tf
 
-def main() -> None:    
-    df = Loader.load(RESTAURANT_TRAIN_PATH)
+def train(filepath, model_name) -> None:    
+    df = Loader.load(filepath)
     processor = Preprocessor(df)
     train_dataset, validation_dataset = processor.make_category_dataset(16)
 
@@ -12,7 +12,7 @@ def main() -> None:
     LR = 0.005
     EPOCHS = 30
 
-    model = BasicModel(processor.category_encoder, len(processor.get_vocab()), name="acd_model")
+    model = BasicModel(processor.category_encoder, len(processor.get_vocab()), name=model_name)
     model.adapt_encoder(df["text"])
     model.init_embeddings(embeddings_index)
     ALPHA = 0.5
@@ -32,6 +32,9 @@ def main() -> None:
     print(model.invert_multi_hot(processor.get_category_encoded_labels()[INDEX], ALPHA))
     print(model.invert_multi_hot(predict[INDEX], ALPHA))
 
+def main() -> None:
+    train(RESTAURANT_TRAIN_PATH, "acd_rest_model")
+    train(LAPTOP_TRAIN_PATH, "acd_lapt_model")
 
 if __name__ == "__main__":
     main()

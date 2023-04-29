@@ -10,7 +10,7 @@ def train(filepath, model_name) -> None:
     embeddings_index = Loader.load_word_embedings(GLOVE_EMBEDINGS_PATH)
 
     LR = 0.005
-    EPOCHS = 5
+    EPOCHS = 30
 
     model = BasicModel(processor.polarity_encoder, len(processor.get_vocab()), name=model_name)
     model.adapt_encoder(list(df["text"]) + processor.categories)

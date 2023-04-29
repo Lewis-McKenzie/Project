@@ -1,12 +1,13 @@
 import tensorflow as tf
 
-from utils import Loader, Preprocessor, MODEL_PATH, RESTAURANT_TEST_PATH
+from utils import Loader, Preprocessor, MODEL_PATH, RESTAURANT_TEST_PATH, LAPTOP_TEST_PATH
 
 
-def main() -> None:
-    model = Loader.load_model(MODEL_PATH, "polarity_model")
+def test(filepath, model_name) -> None:
+    print(f"testing {model_name} on {filepath}")
+    model = Loader.load_model(MODEL_PATH, model_name)
     
-    test_df = Loader.load(RESTAURANT_TEST_PATH)
+    test_df = Loader.load(filepath)
     x, y = Preprocessor.pair_text_and_categories(test_df)
     x = tf.convert_to_tensor(x)
     labels = tf.ragged.constant(y)
@@ -26,6 +27,10 @@ def main() -> None:
     print(predict[INDEX])
     print(model.invert_multi_hot(encoded_labels[INDEX], ALPHA))
     print(model.invert_multi_hot(predict[INDEX], ALPHA))
+
+def main() -> None:
+    test(RESTAURANT_TEST_PATH, "sp_rest_model")
+    test(LAPTOP_TEST_PATH, "sp_lapt_model")
 
 if __name__ == "__main__":
     main()
