@@ -8,7 +8,7 @@ from argumentation import Argument
 
 
 def main() -> None:
-    ALPHA = 0.5
+    ALPHA = 0.1
 
     acd_model = Loader.load_model(MODEL_WEIGHTS, "acd_model")
     polarity_model = Loader.load_model(MODEL_WEIGHTS, "polarity_model")
@@ -29,8 +29,8 @@ def main() -> None:
             results[text][category] = encoded_predicted_polarities[i]
 
     argument = Argument(results, ALPHA)
-    fl = argument.fuzzy_labeling(1)
-    argument.describe_category(fl, "RESTAURANT#GENERAL")
+    fl = argument.fuzzy_labeling(12)
+    argument.describe_category(fl, "FOOD#QUALITY")
 
 if __name__ == "__main__":
     main()

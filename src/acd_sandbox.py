@@ -16,7 +16,7 @@ def main() -> None:
     embeddings_index = Loader.load_word_embedings(EMB_PATH)
 
     LR = 0.005
-    EPOCHS = 5
+    EPOCHS = 30
 
     model = BasicModel(processor.category_encoder, len(processor.get_vocab()), name="acd_model")
     model.adapt_encoder(df["text"])

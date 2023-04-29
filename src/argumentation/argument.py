@@ -13,6 +13,8 @@ class Argument:
         self.alpha = alpha
 
     def args_that_attack(self, argument: str, category: str, polarity: int) -> List[str]:
+        if self.model_results[argument][category][polarity] <  self.alpha:
+            return []
         attackers: List[str] = []
         opposite_polarity = 2 - polarity
         for text in self.arguments_with_category(category):
