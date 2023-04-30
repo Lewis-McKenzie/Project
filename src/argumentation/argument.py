@@ -58,7 +58,6 @@ class Argument:
     def is_negative(self, polarity: List[float]) -> bool:
         return polarity[NEGATIVE] >= self.alpha
 
-    #TODO: algorithm only works on digraphs
     def fuzzy_labeling(self, iters: int) -> Dict[str, Dict[str, List[float]]]:
         fuzzy_labels = self.init_fuzzy_labels()
         for _ in range(iters):
