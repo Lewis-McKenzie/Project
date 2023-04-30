@@ -14,7 +14,7 @@ def test(filepath, model_name) -> None:
     LR=0.001
     model.compile(loss='binary_crossentropy',
                     optimizer=tf.keras.optimizers.Adam(learning_rate=LR),
-                    metrics=['binary_accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(threshold=ALPHA)])
+                    metrics=['accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(average="micro", threshold=ALPHA)])
     model.evaluate(test_df["text"], encoded_labels)
 
     INDEX = 2
