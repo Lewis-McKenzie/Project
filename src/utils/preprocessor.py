@@ -5,9 +5,6 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import nltk
 
-MAX_LEN = 96
-VECTOR_SIZE = 64
-
 class Preprocessor:
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
