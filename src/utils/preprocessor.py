@@ -46,16 +46,14 @@ class Preprocessor:
         return encoder
 
     def make_category_dataset(self, batch_size: int, test_size=0.1) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
-        x = self.data["text"]
-        y = [[opinion["category"] for opinion in opinions] for opinions in self.data["opinions"]]
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)#, stratify=y)
+        x_train, y_train, x_test, y_test = self.split_category(test_size)
         train_dataset = self.make_dataset(x_train, y_train, self.category_encoder, batch_size)
         test_dataset = self.make_dataset(x_test, y_test, self.category_encoder, batch_size, is_train=False)
         return train_dataset, test_dataset
 
     def make_polarity_dataset(self, batch_size: int, test_size=0.1) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
         x, y = Preprocessor.pair_text_and_categories(self.data)
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)#, stratify=y)
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, stratify=y)
         train_dataset = self.make_dataset(x_train, y_train, self.polarity_encoder, batch_size)
         test_dataset = self.make_dataset(x_test, y_test, self.polarity_encoder, batch_size, is_train=False)
         return train_dataset, test_dataset
@@ -81,6 +79,13 @@ class Preprocessor:
         train_df, test_df = train_test_split(self.data, test_size=test_size, stratify=label_binarized[:, 1])
         x_train, x_test = train_df["text"], test_df["text"]
         y_train, y_test = Preprocessor.polarity_category_values(train_df), Preprocessor.polarity_category_values(test_df)
+        return x_train, y_train, x_test, y_test
+
+    def split_category(self, test_size: float):
+        label_binarized = self.get_category_encoded_labels()
+        train_df, test_df = train_test_split(self.data, test_size=test_size, stratify=label_binarized[:, 1])
+        x_train, x_test = train_df["text"], test_df["text"]
+        y_train, y_test = Preprocessor.category_values(train_df), Preprocessor.category_values(test_df)
         return x_train, y_train, x_test, y_test
 
     def get_polarity_category_encoded_labels(self):

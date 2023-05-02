@@ -14,7 +14,7 @@ def train(filepath, model_name, test_filepath) -> None:
     embeddings_index = Loader.load_word_embedings(GLOVE_EMBEDINGS_PATH)
 
     LR = 0.005
-    EPOCHS = 30
+    EPOCHS = 5
 
     model = BasicModel(processor.category_encoder, len(processor.get_vocab()), name=model_name)
     model.adapt_encoder(df["text"])
@@ -25,7 +25,7 @@ def train(filepath, model_name, test_filepath) -> None:
                 metrics=['accuracy', tf.keras.metrics.Precision(thresholds=ALPHA), tf.keras.metrics.Recall(thresholds=ALPHA), tf.keras.metrics.F1Score(average="micro", threshold=ALPHA)])
 
     model.fit(train_dataset, validation_data=validation_dataset, epochs=EPOCHS, verbose=1)
-    model.save_model(MODEL_PATH)
+    #model.save_model(MODEL_PATH)
 
     INDEX = 0
 
